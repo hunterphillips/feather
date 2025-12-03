@@ -23,24 +23,27 @@ export function ModelSelector() {
   ];
 
   const modelOptions =
-    availableModels?.[currentProvider as keyof typeof availableModels]?.map((m) => ({
-      value: m,
-      label: m,
-    })) || [];
+    availableModels?.[currentProvider as keyof typeof availableModels]?.map(
+      (m) => ({
+        value: m,
+        label: m,
+      })
+    ) || [];
 
   const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newProvider = e.target.value;
     setProvider(newProvider);
 
     // Auto-select first model of new provider
-    const newModels = availableModels?.[newProvider as keyof typeof availableModels];
+    const newModels =
+      availableModels?.[newProvider as keyof typeof availableModels];
     if (newModels && newModels.length > 0) {
       setModel(newModels[0]);
     }
   };
 
   return (
-    <div className="flex gap-2 p-4 border-b">
+    <div className="flex gap-2 p-4 bg-background">
       <Select
         value={currentProvider}
         onChange={handleProviderChange}
@@ -52,7 +55,6 @@ export function ModelSelector() {
         onChange={(e) => setModel(e.target.value)}
         options={modelOptions}
         disabled={modelOptions.length === 0}
-        className="flex-1"
       />
     </div>
   );

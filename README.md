@@ -1,16 +1,17 @@
-# Feather
+# 🪶 Feather
 
-Lightweight chat interface for experimenting with AI models. A minimalist alternative to Open WebUI or LibreChat.
-
+A lightweight chat interface for LLMs. Designed as a minimalist alternative to Open WebUI or LibreChat.
 
 ## Quick Start
 
 1. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 2. **Configure backend:**
+
    ```bash
    cd server
    cp .env.example .env
@@ -18,6 +19,7 @@ Lightweight chat interface for experimenting with AI models. A minimalist altern
    ```
 
 3. **Start development servers:**
+
    ```bash
    # From project root
    npm run dev
@@ -47,20 +49,20 @@ VITE_API_URL=http://localhost:3001
 ## Architecture
 
 - **Frontend:** React + TypeScript + Vite + Tailwind CSS + Zustand
-- **Backend:** Express + Vercel AI SDK 
+- **Backend:** Express + Vercel AI SDK
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Build Tool | Vite |
-| Framework | React |
-| Language | TypeScript |
-| Styling | Tailwind CSS |
-| Components | Shadcn/UI |
-| State | Zustand + useChat hook (messages) |
-| Backend Framework | Express |
-| AI Integration | Vercel AI SDK |
+| Layer             | Technology                        |
+| ----------------- | --------------------------------- |
+| Build Tool        | Vite                              |
+| Framework         | React                             |
+| Language          | TypeScript                        |
+| Styling           | Tailwind CSS                      |
+| Components        | Shadcn/UI                         |
+| State             | Zustand + useChat hook (messages) |
+| Backend Framework | Express                           |
+| AI Integration    | Vercel AI SDK                     |
 
 ## Project Structure
 
