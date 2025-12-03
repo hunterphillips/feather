@@ -2,14 +2,6 @@
 
 Lightweight chat interface for experimenting with AI models. A minimalist alternative to Open WebUI or LibreChat.
 
-## Features
-
-- **Multi-Provider Support:** OpenAI, Anthropic, Google, and Ollama
-- **Real-time Streaming:** Progressive responses using Vercel AI SDK
-- **Model Selection:** Choose from multiple models per provider
-- **Clean UI:** Modern interface built with React, Tailwind CSS, and Shadcn/UI
-- **No Database:** In-memory state for instant reset capability
-
 ## Quick Start
 
 1. **Install dependencies:**
