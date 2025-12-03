@@ -2,6 +2,7 @@
 
 Lightweight chat interface for experimenting with AI models. A minimalist alternative to Open WebUI or LibreChat.
 
+
 ## Quick Start
 
 1. **Install dependencies:**
@@ -35,7 +36,6 @@ PORT=3001
 OPENAI_API_KEY=your_openai_key_here
 ANTHROPIC_API_KEY=your_anthropic_key_here
 GOOGLE_API_KEY=your_google_key_here
-OLLAMA_BASE_URL=http://localhost:11434
 ```
 
 ### Client (`.env`)
@@ -47,22 +47,18 @@ VITE_API_URL=http://localhost:3001
 ## Architecture
 
 - **Frontend:** React + TypeScript + Vite + Tailwind CSS + Zustand
-- **Backend:** Express + Vercel AI SDK (provider abstraction)
-- **Pattern:** Client-Server Proxy (API keys hidden server-side)
-- **State:** In-memory only (no persistence, refresh = reset)
+- **Backend:** Express + Vercel AI SDK 
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Build Tool | Vite |
-| Framework | React 18 |
-| Language | TypeScript (strict mode) |
+| Framework | React |
+| Language | TypeScript |
 | Styling | Tailwind CSS |
 | Components | Shadcn/UI |
-| State | Zustand (config only) + useChat hook (messages) |
-| Markdown | react-markdown + remark-gfm |
-| Syntax Highlighting | react-syntax-highlighter |
+| State | Zustand + useChat hook (messages) |
 | Backend Framework | Express |
 | AI Integration | Vercel AI SDK |
 
@@ -128,19 +124,6 @@ Get your API key from [console.anthropic.com](https://console.anthropic.com)
 ### Google
 
 Get your API key from [makersuite.google.com](https://makersuite.google.com)
-
-### Ollama
-
-Run Ollama locally:
-```bash
-# Install Ollama
-curl -fsSL https://ollama.com/install.sh | sh
-
-# Pull a model
-ollama pull llama3.2
-
-# Ollama runs on http://localhost:11434 by default
-```
 
 ## License
 
