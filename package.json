@@ -1,0 +1,28 @@
+{
+  "name": "feather",
+  "version": "1.0.0",
+  "description": "Lightweight chat interface for AI workflows",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "install:all": "npm install && npm install --workspaces"
+  },
+  "keywords": [
+    "ai",
+    "chat",
+    "llm",
+    "openai",
+    "anthropic",
+    "google",
+    "ollama"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
