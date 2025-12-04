@@ -7,6 +7,7 @@ export interface ChatRequest {
   provider: string;
   model: string;
   messages: Message[];
+  systemPrompt?: string;
 }
 
 export interface ProviderConfig {
