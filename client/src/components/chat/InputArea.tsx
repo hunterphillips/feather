@@ -1,9 +1,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Send, Square, X, FileText } from 'lucide-react';
+import { Square, X, FileText } from 'lucide-react';
 import { InputMenu } from './InputMenu';
 import { SystemPromptPanel } from './SystemPromptPanel';
 import { useConfigStore } from '@/store/config-store';
+// import featherLogo from '@/assets/feather-logo-b.svg';
+import birdIcon from '@/assets/bird.png';
 
 interface InputAreaProps {
   input: string;
@@ -44,38 +46,48 @@ export function InputArea({
             <InputMenu onAddInstructions={() => setShowPromptPanel(true)} />
 
             <textarea
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message..."
-            disabled={isLoading}
-            rows={1}
-            className="flex-1 resize-none border-0 bg-transparent focus-visible:outline-none text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 min-h-[24px] max-h-[200px] overflow-y-auto"
-            style={{
-              height: 'auto',
-              minHeight: '24px',
-            }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
-            }}
-          />
-          {isLoading ? (
-            <Button
-              type="button"
-              onClick={onStop}
-              variant="outline"
-              className="px-3"
-            >
-              <Square className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button type="submit" disabled={!input.trim()}>
-              <Send className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message..."
+              disabled={isLoading}
+              rows={1}
+              className="flex-1 resize-none border-0 bg-transparent focus-visible:outline-none text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 min-h-[24px] max-h-[200px] overflow-y-auto"
+              style={{
+                height: 'auto',
+                minHeight: '24px',
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
+              }}
+            />
+            {isLoading ? (
+              <Button
+                type="button"
+                onClick={onStop}
+                variant="outline"
+                className="px-3"
+              >
+                <Square className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={!input.trim()}
+                className="rounded-full p-0"
+              >
+                {/* <Send className="h-4 w-4" /> */}
+                {/* <img src={featherLogo} alt="Send" className="opacity-90 w-[28px]" /> */}
+                <img
+                  src={birdIcon}
+                  alt="Send"
+                  className="opacity-90 w-[38px]"
+                />
+              </Button>
+            )}
+          </div>
 
           {/* Active Tools Pills */}
           {systemPrompt && (
