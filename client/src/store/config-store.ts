@@ -12,15 +12,13 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
 
   setProvider: (provider) => {
     set({ currentProvider: provider });
-    // Auto-save model selection
     if (get().isConfigLoaded) {
-      get().saveConfig({ provider });
+      get().saveConfig({ provider }); // Auto-save model selection
     }
   },
 
   setModel: (model) => {
     set({ currentModel: model });
-    // Auto-save model selection
     if (get().isConfigLoaded) {
       get().saveConfig({ model });
     }
@@ -28,7 +26,6 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
 
   setSystemPrompt: (prompt) => {
     set({ systemPrompt: prompt });
-    // No auto-save - user must click Save button
   },
 
   setAvailableModels: (models) => set({ availableModels: models }),
