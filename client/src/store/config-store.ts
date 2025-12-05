@@ -6,9 +6,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 export const useConfigStore = create<ConfigState>((set, get) => ({
   currentProvider: 'openai',
   currentModel: 'gpt-4o-mini',
-  systemPrompt: '',
   availableModels: null,
   isConfigLoaded: false,
+  tools: [],
 
   setProvider: (provider) => {
     set({ currentProvider: provider });
@@ -24,11 +24,42 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
     }
   },
 
-  setSystemPrompt: (prompt) => {
-    set({ systemPrompt: prompt });
+  setAvailableModels: (models) => set({ availableModels: models }),
+
+  getToolById: (id) => {
+    return get().tools.find((tool) => tool.id === id);
   },
 
-  setAvailableModels: (models) => set({ availableModels: models }),
+  updateToolConfig: async (id, config) => {
+    const tools = get().tools.map((tool) =>
+      tool.id === id ? { ...tool, config } : tool
+    );
+    set({ tools });
+    if (get().isConfigLoaded) {
+      await get().saveConfig({ tools });
+    }
+  },
+
+  toggleTool: async (id, enabled) => {
+    // Client-side tools (no endpoint) can be enabled alongside workflow tools
+    // Workflow tools (with endpoints) are mutually exclusive
+    const targetTool = get().tools.find((t) => t.id === id);
+
+    const tools = get().tools.map((tool) => {
+      if (tool.id === id) {
+        return { ...tool, enabled };
+      }
+      // If enabling a workflow tool, disable other workflow tools
+      if (enabled && targetTool?.endpoint && tool.endpoint) {
+        return { ...tool, enabled: false };
+      }
+      return tool;
+    });
+    set({ tools });
+    if (get().isConfigLoaded) {
+      await get().saveConfig({ tools });
+    }
+  },
 
   fetchModels: async () => {
     try {
@@ -52,7 +83,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
         set({
           currentProvider: config.provider,
           currentModel: config.model,
-          systemPrompt: config.systemPrompt || '',
+          tools: config.tools || [],
           isConfigLoaded: true,
         });
       }

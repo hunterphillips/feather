@@ -9,20 +9,24 @@ interface SystemPromptPanelProps {
 }
 
 export function SystemPromptPanel({ isOpen, onClose }: SystemPromptPanelProps) {
-  const { systemPrompt, setSystemPrompt, saveConfig } = useConfigStore();
-  const [localPrompt, setLocalPrompt] = useState(systemPrompt);
+  const { getToolById, updateToolConfig, toggleTool } = useConfigStore();
+  const instructionsTool = getToolById('instructions');
+  const [localPrompt, setLocalPrompt] = useState(
+    (instructionsTool?.config.prompt as string) || ''
+  );
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setLocalPrompt(systemPrompt);
+    if (isOpen && instructionsTool) {
+      setLocalPrompt((instructionsTool.config.prompt as string) || '');
     }
-  }, [isOpen, systemPrompt]);
+  }, [isOpen, instructionsTool]);
 
   const handleSave = async () => {
     setIsSaving(true);
-    setSystemPrompt(localPrompt);
-    await saveConfig({ systemPrompt: localPrompt });
+    await updateToolConfig('instructions', { prompt: localPrompt });
+    // Enable the tool if prompt is not empty, disable if empty
+    await toggleTool('instructions', localPrompt.trim().length > 0);
     setIsSaving(false);
     onClose();
   };

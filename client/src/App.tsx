@@ -9,7 +9,7 @@ import { useConfigStore } from './store/config-store';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { currentProvider, currentModel, systemPrompt, loadConfig } = useConfigStore();
+  const { currentProvider, currentModel, tools, loadConfig } = useConfigStore();
   const { toast, showToast, hideToast } = useToast();
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -18,6 +18,33 @@ function App() {
   useEffect(() => {
     loadConfig();
   }, [loadConfig]);
+
+  // 1. Identify Workflow Tool (Target Endpoint)
+  const workflowTool = tools.find((tool) => tool.enabled && tool.endpoint);
+
+  // 2. Aggregate Context from Client-Side Tools
+  // Find all enabled tools that do NOT have an endpoint but include additional context
+  const systemContext = tools
+    .filter((t) => t.enabled && !t.endpoint && t.config?.prompt)
+    .map((t) => t.config.prompt)
+    .join('\n\n');
+
+  // 3. Construct Dynamic Endpoint
+  const apiEndpoint = workflowTool
+    ? `${API_URL}/api/${workflowTool.endpoint}`
+    : `${API_URL}/api/chat`;
+
+  // 4. Construct Request Body
+  const requestBody = workflowTool
+    ? {
+        toolConfig: workflowTool.config,
+        systemContext: systemContext,
+      }
+    : {
+        provider: currentProvider,
+        model: currentModel,
+        systemContext: systemContext,
+      };
 
   const {
     messages,
@@ -28,12 +55,8 @@ function App() {
     error,
     stop,
   } = useChat({
-    api: `${API_URL}/api/chat`,
-    body: {
-      provider: currentProvider,
-      model: currentModel,
-      systemPrompt: systemPrompt,
-    },
+    api: apiEndpoint,
+    body: requestBody,
   });
 
   // Show toast on error
