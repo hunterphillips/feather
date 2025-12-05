@@ -5,17 +5,37 @@ export interface AvailableModels {
   ollama: string[];
 }
 
+export interface Tool {
+  id: string;
+  label: string;
+  enabled: boolean;
+  config: Record<string, unknown>;
+  endpoint?: string; // Relative path
+}
+
 export interface ConfigState {
   currentProvider: string;
   currentModel: string;
-  systemPrompt: string;
   availableModels: AvailableModels | null;
   isConfigLoaded: boolean;
+  tools: Tool[];
+
   setProvider: (provider: string) => void;
   setModel: (model: string) => void;
-  setSystemPrompt: (prompt: string) => void;
   setAvailableModels: (models: AvailableModels) => void;
+
+  getToolById: (id: string) => Tool | undefined;
+  updateToolConfig: (
+    id: string,
+    config: Record<string, unknown>
+  ) => Promise<void>;
+  toggleTool: (id: string, enabled: boolean) => Promise<void>;
+
   fetchModels: () => Promise<void>;
   loadConfig: () => Promise<void>;
-  saveConfig: (updates: { provider?: string; model?: string; systemPrompt?: string }) => Promise<void>;
+  saveConfig: (updates: {
+    provider?: string;
+    model?: string;
+    tools?: Tool[];
+  }) => Promise<void>;
 }

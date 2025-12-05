@@ -4,7 +4,14 @@ import { streamText } from 'ai';
 import { config, validateProviderConfig } from './config.js';
 import { getProvider, AVAILABLE_MODELS } from './providers.js';
 import type { ChatRequest } from './types.js';
-import { initializeDatabase, getConfig, updateConfig } from './db.js';
+import {
+  initializeDatabase,
+  getConfig,
+  updateConfig,
+  getTools,
+  updateTools,
+} from './db.js';
+import { handleConsensusChat } from './workflows/consensus.js';
 
 const app = express();
 
@@ -29,7 +36,8 @@ app.get('/api/models', (req, res) => {
 app.get('/api/config', async (req, res) => {
   try {
     const config = await getConfig();
-    res.json(config);
+    const tools = await getTools();
+    res.json({ ...config, tools });
   } catch (error) {
     console.error('Error fetching config:', error);
     res.status(500).json({ error: 'Failed to fetch configuration' });
@@ -39,10 +47,10 @@ app.get('/api/config', async (req, res) => {
 // Save configuration
 app.post('/api/config', async (req, res) => {
   try {
-    const { provider, model, systemPrompt } = req.body;
+    const { provider, model, tools } = req.body;
 
     // Validate at least one field is present
-    if (!provider && !model && systemPrompt === undefined) {
+    if (!provider && !model && !tools) {
       res.status(400).json({ error: 'No configuration provided' });
       return;
     }
@@ -50,11 +58,17 @@ app.post('/api/config', async (req, res) => {
     const updates: any = {};
     if (provider) updates.provider = provider;
     if (model) updates.model = model;
-    if (systemPrompt !== undefined) updates.systemPrompt = systemPrompt;
 
     await updateConfig(updates);
+
+    // Update tools if provided
+    if (tools) {
+      await updateTools(tools);
+    }
+
     const config = await getConfig();
-    res.json(config);
+    const updatedTools = await getTools();
+    res.json({ ...config, tools: updatedTools });
   } catch (error) {
     console.error('Error saving config:', error);
     res.status(500).json({ error: 'Failed to save configuration' });
@@ -64,15 +78,13 @@ app.post('/api/config', async (req, res) => {
 // Main chat endpoint with streaming
 app.post('/api/chat', async (req, res) => {
   try {
-    const { provider, model, messages, systemPrompt } = req.body as ChatRequest;
+    const { provider, model, messages, systemContext } = req.body;
 
     // Validation
     if (!provider || !model || !messages) {
-      res
-        .status(400)
-        .json({
-          error: 'Missing required fields: provider, model, or messages',
-        });
+      res.status(400).json({
+        error: 'Missing required fields: provider, model, or messages',
+      });
       return;
     }
 
@@ -86,11 +98,11 @@ app.post('/api/chat', async (req, res) => {
     // Get provider instance
     const providerInstance = getProvider(provider, model);
 
-    // Prepend system message if provided
-    let processedMessages = messages;
-    if (systemPrompt && systemPrompt.trim()) {
-      processedMessages = [
-        { role: 'system' as const, content: systemPrompt },
+    // Prepend system context if provided
+    let finalMessages = messages;
+    if (systemContext) {
+      finalMessages = [
+        { role: 'system', content: systemContext },
         ...messages,
       ];
     }
@@ -98,7 +110,7 @@ app.post('/api/chat', async (req, res) => {
     // Stream response using Vercel AI SDK
     const result = await streamText({
       model: providerInstance,
-      messages: processedMessages,
+      messages: finalMessages,
     });
 
     // Use Vercel Data Stream Protocol (compatible with useChat hook)
@@ -114,6 +126,9 @@ app.post('/api/chat', async (req, res) => {
     }
   }
 });
+
+// Consensus workflow endpoint
+app.post('/api/workflow/consensus', handleConsensusChat);
 
 app.listen(config.port, () => {
   console.log(`Feather server running on http://localhost:${config.port}`);

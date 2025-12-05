@@ -6,20 +6,51 @@ import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+export interface Tool {
+  id: string;
+  label: string;
+  enabled: boolean;
+  config: Record<string, unknown>;
+  endpoint?: string; // Relative path from API base (ex. 'workflow/consensus')
+}
+
 export interface Database {
   config: {
     provider: string;
     model: string;
-    systemPrompt: string;
   };
+  tools: Tool[];
 }
 
 const defaultData: Database = {
   config: {
     provider: 'openai',
     model: 'gpt-4o-mini',
-    systemPrompt: '',
   },
+  tools: [
+    {
+      id: 'instructions',
+      label: 'Instructions',
+      enabled: false,
+      config: {
+        prompt: '',
+      },
+      // No endpoint - client-side only tool
+    },
+    {
+      id: 'consensus',
+      label: 'Consensus',
+      enabled: false,
+      config: {
+        models: [
+          { provider: 'openai', model: 'gpt-5.1' },
+          { provider: 'anthropic', model: 'claude-opus-4-5' },
+          { provider: 'google', model: 'gemini-3-pro' },
+        ],
+      },
+      endpoint: 'workflow/consensus',
+    },
+  ],
 };
 
 // Initialize database
@@ -48,5 +79,26 @@ export async function getConfig() {
 
 export async function updateConfig(updates: Partial<Database['config']>) {
   db.data.config = { ...db.data.config, ...updates };
+  await db.write();
+}
+
+export async function getTools() {
+  return db.data.tools;
+}
+
+export async function getTool(id: string) {
+  return db.data.tools.find((tool) => tool.id === id);
+}
+
+export async function updateTool(id: string, updates: Partial<Tool>) {
+  const toolIndex = db.data.tools.findIndex((tool) => tool.id === id);
+  if (toolIndex !== -1) {
+    db.data.tools[toolIndex] = { ...db.data.tools[toolIndex], ...updates };
+    await db.write();
+  }
+}
+
+export async function updateTools(tools: Tool[]) {
+  db.data.tools = tools;
   await db.write();
 }

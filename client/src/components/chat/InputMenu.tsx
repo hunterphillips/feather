@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Users } from 'lucide-react';
+import { useConfigStore } from '@/store/config-store';
 
 interface InputMenuProps {
   onAddInstructions: () => void;
@@ -8,6 +9,7 @@ interface InputMenuProps {
 export function InputMenu({ onAddInstructions }: InputMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { toggleTool } = useConfigStore();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -43,6 +45,16 @@ export function InputMenu({ onAddInstructions }: InputMenuProps) {
           >
             <FileText className="h-4 w-4 text-foreground" />
             <span className="text-sm text-foreground">Add instructions</span>
+          </button>
+          <button
+            onClick={() => {
+              toggleTool('consensus', true);
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left"
+          >
+            <Users className="h-4 w-4 text-foreground" />
+            <span className="text-sm text-foreground">Consensus</span>
           </button>
         </div>
       )}
