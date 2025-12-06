@@ -10,8 +10,8 @@ interface ToolModalConfig {
   configKey: string; // Which key in tool.config to edit
 }
 
-export function createToolTextModal(config: ToolModalConfig) {
-  return function GenericTextPanel({ tool, isOpen, onClose }: ToolPanelProps) {
+export function createToolTextPanel(config: ToolModalConfig) {
+  return function ToolTextPanel({ tool, isOpen, onClose }: ToolPanelProps) {
     const { updateToolConfig, toggleTool } = useConfigStore();
     const [localValue, setLocalValue] = useState(
       (tool.config[config.configKey] as string) || ''

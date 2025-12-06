@@ -1,6 +1,6 @@
-import { createToolTextModal } from '@/components/chat/ToolTextModal';
+import { createToolTextPanel } from '@/components/chat/ToolTextPanel';
 
-export const InstructionsPanel = createToolTextModal({
+export const InstructionsPanel = createToolTextPanel({
   title: 'Custom Instructions',
   description:
     'Add instructions that will be included with every message you send.',
