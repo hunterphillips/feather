@@ -1,25 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { Check } from 'lucide-react';
 import { useConfigStore } from '@/store/config-store';
+import type { ToolConfigProps } from '@/lib/types';
 
 interface ModelConfig {
   provider: string;
   model: string;
 }
 
-interface ModelSelectorDropdownProps {
-  selectedModels: ModelConfig[];
-  onToggleModel: (provider: string, model: string) => void;
-  onClose: () => void;
-}
-
-export function ModelSelectorDropdown({
-  selectedModels,
-  onToggleModel,
-  onClose,
-}: ModelSelectorDropdownProps) {
+export function ConsensusConfig({ tool, isOpen, onClose }: ToolConfigProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { availableModels } = useConfigStore();
+  const { availableModels, updateToolConfig } = useConfigStore();
+
+  const selectedModels = (tool.config.models as ModelConfig[]) || [];
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -34,7 +27,25 @@ export function ModelSelectorDropdown({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
-  if (!availableModels) return null;
+  const handleToggleModel = (provider: string, model: string) => {
+    const modelIndex = selectedModels.findIndex(
+      (m) => m.provider === provider && m.model === model
+    );
+
+    let updatedModels;
+    if (modelIndex > -1) {
+      updatedModels = selectedModels.filter((_, i) => i !== modelIndex);
+    } else {
+      updatedModels = [...selectedModels, { provider, model }];
+    }
+
+    updateToolConfig(tool.id, {
+      ...tool.config,
+      models: updatedModels,
+    });
+  };
+
+  if (!isOpen || !availableModels) return null;
 
   const isModelSelected = (provider: string, model: string) => {
     return selectedModels.some(
@@ -80,8 +91,8 @@ export function ModelSelectorDropdown({
                   <button
                     key={`${key}-${model}`}
                     type="button"
-                    onClick={() => onToggleModel(key, model)}
-                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-accent transition-colors text-left"
+                    onClick={() => handleToggleModel(key, model)}
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-border transition-colors text-left"
                   >
                     <div className="w-4 h-4 flex items-center justify-center">
                       {selected && (

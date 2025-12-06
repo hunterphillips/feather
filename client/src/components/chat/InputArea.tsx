@@ -1,11 +1,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Square, X, FileText, Users, Settings } from 'lucide-react';
+import { Square } from 'lucide-react';
 import { InputMenu } from './InputMenu';
-import { SystemPromptPanel } from './SystemPromptPanel';
-import { ModelSelectorDropdown } from './ModelSelectorDropdown';
+import { ToolPill } from './ToolPill';
+import { toolRegistry } from '@/lib/tool-registry';
 import { useConfigStore } from '@/store/config-store';
-// import featherLogo from '@/assets/feather-logo-b.svg';
 import birdIcon from '@/assets/bird.png';
 
 interface InputAreaProps {
@@ -23,16 +22,15 @@ export function InputArea({
   isLoading,
   onStop,
 }: InputAreaProps) {
-  const [showPromptPanel, setShowPromptPanel] = React.useState(false);
-  const [showModelSelector, setShowModelSelector] = React.useState(false);
-  const {
-    toggleTool,
-    updateToolConfig,
-    getToolById,
-  } = useConfigStore();
+  const [activePanelToolId, setActivePanelToolId] = React.useState<
+    string | null
+  >(null);
+  const [activeConfigToolId, setActiveConfigToolId] = React.useState<
+    string | null
+  >(null);
+  const { tools, toggleTool } = useConfigStore();
 
-  const consensusTool = getToolById('consensus');
-  const instructionsTool = getToolById('instructions');
+  const enabledTools = tools.filter((t) => t.enabled);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -41,37 +39,12 @@ export function InputArea({
     }
   };
 
-  const handleRemoveInstructions = async () => {
-    // Clear the prompt content and disable the tool
-    await updateToolConfig('instructions', { prompt: '' });
-    await toggleTool('instructions', false);
+  const handleRemoveTool = (toolId: string) => {
+    toggleTool(toolId, false);
   };
 
-  const handleToggleModel = (provider: string, model: string) => {
-    if (!consensusTool) return;
-
-    const currentModels =
-      (consensusTool.config.models as Array<{
-        provider: string;
-        model: string;
-      }>) || [];
-    const modelIndex = currentModels.findIndex(
-      (m) => m.provider === provider && m.model === model
-    );
-
-    let updatedModels;
-    if (modelIndex > -1) {
-      // Remove model
-      updatedModels = currentModels.filter((_, i) => i !== modelIndex);
-    } else {
-      // Add model
-      updatedModels = [...currentModels, { provider, model }];
-    }
-
-    updateToolConfig('consensus', {
-      ...consensusTool.config,
-      models: updatedModels,
-    });
+  const handleOpenConfig = (toolId: string) => {
+    setActiveConfigToolId(toolId);
   };
 
   return (
@@ -80,7 +53,7 @@ export function InputArea({
         <div className="max-w-3xl mx-auto space-y-2">
           <div className="flex gap-2 bg-accent/50 rounded-lg p-4 items-end">
             {/* Plus Menu */}
-            <InputMenu onAddInstructions={() => setShowPromptPanel(true)} />
+            <InputMenu onOpenPanel={setActivePanelToolId} />
 
             <textarea
               value={input}
@@ -115,7 +88,6 @@ export function InputArea({
                 disabled={!input.trim()}
                 className="rounded-full p-0"
               >
-                {/* <img src={featherLogo} alt="Send" className="opacity-90 w-[28px]" /> */}
                 <img
                   src={birdIcon}
                   alt="Send"
@@ -127,68 +99,56 @@ export function InputArea({
 
           {/* Active Tools Pills */}
           <div className="flex gap-2">
-            {instructionsTool?.enabled && (
-              <button
-                type="button"
-                onClick={handleRemoveInstructions}
-                className="group inline-flex items-center gap-2 px-3 py-1.5 bg-accent border border-border rounded-full text-xs text-foreground hover:bg-accent/80 transition-colors"
-              >
-                <div className="relative w-3 h-3">
-                  <FileText className="h-3 w-3 absolute inset-0 opacity-100 group-hover:opacity-0 transition-opacity" />
-                  <X className="h-3 w-3 absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+            {enabledTools.map((tool) => {
+              const PillComponent =
+                toolRegistry.getPillComponent(tool.id) || ToolPill;
+              const hasConfig = !!toolRegistry.getConfigComponent(tool.id);
+
+              return (
+                <div key={tool.id} className="relative">
+                  <PillComponent
+                    tool={tool}
+                    onRemove={() => handleRemoveTool(tool.id)}
+                    onConfigClick={
+                      hasConfig ? () => handleOpenConfig(tool.id) : undefined
+                    }
+                  />
+
+                  {/* Render config dropdown if active */}
+                  {activeConfigToolId === tool.id &&
+                    (() => {
+                      const ConfigComponent = toolRegistry.getConfigComponent(
+                        tool.id
+                      );
+                      return ConfigComponent ? (
+                        <ConfigComponent
+                          tool={tool}
+                          isOpen={true}
+                          onClose={() => setActiveConfigToolId(null)}
+                        />
+                      ) : null;
+                    })()}
                 </div>
-                <span>Instructions</span>
-              </button>
-            )}
-
-            {consensusTool?.enabled && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => toggleTool('consensus', false)}
-                  className="group inline-flex items-center gap-2 px-3 py-1.5 bg-accent border border-border rounded-full text-xs text-foreground hover:bg-accent/80 transition-colors"
-                >
-                  <div className="relative w-3 h-3">
-                    <Users className="h-3 w-3 absolute inset-0 opacity-100 group-hover:opacity-0 transition-opacity" />
-                    <X className="h-3 w-3 absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                  <span>Consensus</span>
-                </button>
-
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowModelSelector(!showModelSelector)}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-accent border border-border rounded-full text-xs text-foreground hover:bg-accent/80 transition-colors"
-                  >
-                    <Settings className="h-3 w-3" />
-                    <span>
-                      Models (
-                      {((consensusTool.config.models as any[]) || []).length})
-                    </span>
-                  </button>
-
-                  {showModelSelector && (
-                    <ModelSelectorDropdown
-                      selectedModels={
-                        (consensusTool.config.models as any[]) || []
-                      }
-                      onToggleModel={handleToggleModel}
-                      onClose={() => setShowModelSelector(false)}
-                    />
-                  )}
-                </div>
-              </>
-            )}
+              );
+            })}
           </div>
         </div>
       </form>
 
-      {/* System Prompt Panel */}
-      <SystemPromptPanel
-        isOpen={showPromptPanel}
-        onClose={() => setShowPromptPanel(false)}
-      />
+      {/* Render active panel */}
+      {activePanelToolId &&
+        (() => {
+          const tool = tools.find((t) => t.id === activePanelToolId);
+          const PanelComponent =
+            tool && toolRegistry.getPanelComponent(tool.id);
+          return PanelComponent ? (
+            <PanelComponent
+              tool={tool}
+              isOpen={true}
+              onClose={() => setActivePanelToolId(null)}
+            />
+          ) : null;
+        })()}
     </>
   );
 }
