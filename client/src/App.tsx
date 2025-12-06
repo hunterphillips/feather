@@ -6,6 +6,7 @@ import { ModelSelector } from './components/chat/ModelSelector';
 import { Sidebar } from './components/Sidebar';
 import { Toast, useToast } from './components/ui/toast';
 import { useConfigStore } from './store/config-store';
+import { initializeToolRegistry } from './components/tools';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -13,6 +14,11 @@ function App() {
   const { toast, showToast, hideToast } = useToast();
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+  // Initialize tool registry once on mount
+  useEffect(() => {
+    initializeToolRegistry();
+  }, []);
 
   // Load config on mount
   useEffect(() => {

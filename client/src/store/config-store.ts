@@ -47,7 +47,8 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
 
     const tools = get().tools.map((tool) => {
       if (tool.id === id) {
-        return { ...tool, enabled };
+        // When disabling a tool, clear its config
+        return { ...tool, enabled, config: enabled ? tool.config : {} };
       }
       // If enabling a workflow tool, disable other workflow tools
       if (enabled && targetTool?.endpoint && tool.endpoint) {

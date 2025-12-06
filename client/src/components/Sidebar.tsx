@@ -31,7 +31,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         )}
       >
         <div
-          className="flex items-center justify-center w-8 h-8 cursor-pointer"
+          className="flex items-center justify-center w-8 h-8 cursor-pointer hover:bg-border rounded"
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
           onClick={!isOpen ? onToggle : undefined}
@@ -48,7 +48,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {isOpen && (
           <button
             onClick={onToggle}
-            className="p-1 hover:bg-accent rounded transition-colors"
+            className="p-1 hover:bg-border rounded transition-colors"
           >
             <PanelLeft className="h-5 w-5 text-foreground" />
           </button>
@@ -61,7 +61,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         <button
           onClick={handleNewChat}
           className={cn(
-            'w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors',
+            'w-full flex items-center gap-3 p-3 rounded-lg hover:bg-border transition-colors',
             !isOpen && 'justify-center'
           )}
         >
