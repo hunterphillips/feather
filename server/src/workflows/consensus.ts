@@ -1,6 +1,6 @@
 import { streamText } from 'ai';
 import { getProvider } from '../providers.js';
-import type { Message, WorkflowChatRequest } from '../types.js';
+import type { Message, ChatRequest } from '../types.js';
 import type { Request, Response } from 'express';
 
 interface ModelConfig {
@@ -40,10 +40,11 @@ async function queryModel(
  */
 export async function handleConsensusChat(req: Request, res: Response) {
   try {
-    const { messages, toolConfig, systemContext } = req.body;
+    const { messages, toolConfig, systemContext, provider, model } =
+      req.body as ChatRequest;
 
     // Extract models from tool config
-    const models = (toolConfig.models as ModelConfig[]) || [];
+    const models = (toolConfig?.models as ModelConfig[]) || [];
 
     // Validation
     if (!messages || models.length < 2) {
@@ -54,13 +55,17 @@ export async function handleConsensusChat(req: Request, res: Response) {
       return;
     }
 
+    if (!provider || !model) {
+      res.status(400).json({
+        error: 'Missing synthesizer provider or model',
+      });
+      return;
+    }
+
     // Prepend system context if provided
     let finalMessages = messages;
     if (systemContext) {
-      finalMessages = [
-        { role: 'system', content: systemContext },
-        ...messages,
-      ];
+      finalMessages = [{ role: 'system', content: systemContext }, ...messages];
     }
 
     console.log(
@@ -104,27 +109,48 @@ export async function handleConsensusChat(req: Request, res: Response) {
 
     console.log(`${responses.length} models responded successfully`);
 
-    // 4. Create synthesis prompt
-    const synthesisPrompt = `You are synthesizing responses from multiple AI models. Your task is to create a single, coherent answer that captures the best insights from all responses.
+    // 4. Extract original user query for context
+    const userQuery =
+      messages.filter((m: Message) => m.role === 'user').slice(-1)[0]
+        ?.content || 'Unknown query';
 
-Multiple AI models answered the user's question. Synthesize their responses into one clear, comprehensive answer:
+    // 5. Create synthesis prompt with enhanced guidelines
+    const synthesisPrompt = `You are synthesizing responses from multiple AI models to provide the best possible answer to the user's query.
 
+<user_query>
+${userQuery}
+</user_query>
+
+<model_responses>
 ${responses
   .map(
-    (r, i) => `### Response ${i + 1} (${r.provider}:${r.model}):\n${r.content}`
+    (r) => `<model name="${r.provider}:${r.model}">
+${r.content}
+</model>
+`
   )
-  .join('\n\n')}
+  .join('\n')}
+</model_responses>
 
-Provide a synthesized answer that:
-- Combines the best insights from all responses
-- Resolves any contradictions or differences
-- Maintains clarity and coherence
-- Doesn't explicitly mention that you're synthesizing (write naturally)`;
+Your task: Deliver the BEST answer to the CURRENT user query (shown above in the <user_query> tags) by synthesizing the model responses above.
 
-    // 5. Use first successful model as synthesizer
-    const synthesizer = getProvider(responses[0].provider, responses[0].model);
+Guidelines:
+- Write as ONE cohesive expert response, not "Model X says... Model Y says..."
+- Eliminate redundancy - if models agree on something, state it once (not multiple times with different attributions)
+- Only mention a specific model when it provided an insight that was truly unique to that one model (none of the others mentioned it)
+- Use model mentions conservatively - if there are many unique insights, only highlight the most valuable ones to avoid overwhelming with references
+- Use short names when referring to models (e.g., "GPT-4o", "Claude", "Gemini")
+- Be concise and actionable - avoid lengthy preambles, excessive explanations, or filler text
+- Your response should generally not be significantly longer than the longest individual model response
+- Use clear structure (bullets, headings) when presenting multiple points
+- Focus on delivering actionable value - unique model insights should demonstrate why consulting multiple AI perspectives adds value
 
-    // 6. Stream synthesized response
+Provide your synthesized response now.`;
+
+    // 6. Use configured synthesizer model (from ModelSelector)
+    const synthesizer = getProvider(provider, model);
+
+    // 7. Stream synthesized response
     const result = await streamText({
       model: synthesizer,
       messages: [{ role: 'user', content: synthesisPrompt }],

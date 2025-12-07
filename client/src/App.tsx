@@ -41,16 +41,12 @@ function App() {
     : `${API_URL}/api/chat`;
 
   // 4. Construct Request Body
-  const requestBody = workflowTool
-    ? {
-        toolConfig: workflowTool.config,
-        systemContext: systemContext,
-      }
-    : {
-        provider: currentProvider,
-        model: currentModel,
-        systemContext: systemContext,
-      };
+  const requestBody = {
+    toolConfig: (workflowTool || {})?.config,
+    systemContext: systemContext,
+    provider: currentProvider,
+    model: currentModel,
+  };
 
   const {
     messages,
