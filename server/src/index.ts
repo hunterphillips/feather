@@ -78,7 +78,7 @@ app.post('/api/config', async (req, res) => {
 // Main chat endpoint with streaming
 app.post('/api/chat', async (req, res) => {
   try {
-    const { provider, model, messages, systemContext } = req.body;
+    const { provider, model, messages, systemContext } = req.body as ChatRequest;
 
     // Validation
     if (!provider || !model || !messages) {
