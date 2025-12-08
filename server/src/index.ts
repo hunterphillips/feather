@@ -13,14 +13,13 @@ import {
 } from './db.js';
 import { handleConsensusChat } from './workflows/consensus.js';
 
-const app = express();
+export const app = express();
 
 app.use(cors());
 app.use(express.json());
 
 // Initialize database
 await initializeDatabase();
-console.log('✓ Database initialized');
 
 // Health check
 app.get('/health', (req, res) => {
@@ -78,7 +77,8 @@ app.post('/api/config', async (req, res) => {
 // Main chat endpoint with streaming
 app.post('/api/chat', async (req, res) => {
   try {
-    const { provider, model, messages, systemContext } = req.body as ChatRequest;
+    const { provider, model, messages, systemContext } =
+      req.body as ChatRequest;
 
     // Validation
     if (!provider || !model || !messages) {
@@ -101,10 +101,7 @@ app.post('/api/chat', async (req, res) => {
     // Prepend system context if provided
     let finalMessages = messages;
     if (systemContext) {
-      finalMessages = [
-        { role: 'system', content: systemContext },
-        ...messages,
-      ];
+      finalMessages = [{ role: 'system', content: systemContext }, ...messages];
     }
 
     // Stream response using Vercel AI SDK
@@ -130,6 +127,9 @@ app.post('/api/chat', async (req, res) => {
 // Consensus workflow endpoint
 app.post('/api/workflow/consensus', handleConsensusChat);
 
-app.listen(config.port, () => {
-  console.log(`Feather server running on http://localhost:${config.port}`);
-});
+// Only start server if not imported by tests
+if (import.meta.url === `file://${process.argv[1]}`) {
+  app.listen(config.port, () => {
+    console.log(`Feather server running on http://localhost:${config.port}`);
+  });
+}

@@ -35,7 +35,6 @@ const defaultData: Database = {
       config: {
         prompt: '',
       },
-      // No endpoint - client-side only tool
     },
     {
       id: 'consensus',
