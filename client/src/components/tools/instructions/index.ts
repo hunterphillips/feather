@@ -2,5 +2,5 @@ export { InstructionsPanel } from './InstructionsPanel';
 
 export const instructionsMetadata = {
   icon: 'FileText',
-  description: 'Add custom instructions to all messages',
+  description: 'Add custom instructions',
 };
