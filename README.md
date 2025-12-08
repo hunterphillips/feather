@@ -84,6 +84,7 @@ VITE_API_URL=http://localhost:3001
 │   │   ├── providers.ts    # AI SDK provider registry
 │   │   ├── config.ts       # Environment config
 │   │   └── types.ts        # TypeScript interfaces
+│   ├── /tests              # Vitest tests
 │   └── package.json
 │
 └── package.json            # Root orchestrator
@@ -111,6 +112,12 @@ npm run dev
 
 ```bash
 npm run build
+```
+
+### Running Tests
+
+```bash
+npm test
 ```
 
 ## API Providers
