@@ -19,6 +19,24 @@ export interface Tool {
   endpoint?: string; // Relative path from API base (e.g., 'workflow/consensus')
 }
 
+export interface ChatMessage {
+  id: string;
+  role: 'system' | 'user' | 'assistant' | 'data';
+  content: string;
+  createdAt: string;
+}
+
+export interface Chat {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatMessage[];
+  provider: string;
+  model: string;
+  systemContext?: string;
+}
+
 export interface ProviderConfig {
   apiKey?: string;
   baseURL?: string;

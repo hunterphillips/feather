@@ -31,6 +31,16 @@ export function getProvider(providerName: string, model: string) {
 
 export const AVAILABLE_MODELS = {
   openai: ['gpt-5.1', 'gpt-5-mini', 'gpt-4.1', 'gpt-4.1-mini'],
-  anthropic: ['claude-opus-4-5', 'claude-opus-4-1', 'claude-sonnet-4', 'claude-haiku-4-5'],
-  google: ['gemini-3-pro', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'],
+  anthropic: [
+    'claude-opus-4-5',
+    'claude-opus-4-1',
+    'claude-sonnet-4',
+    'claude-haiku-4-5',
+  ],
+  google: [
+    'gemini-3-pro-preview',
+    'gemini-2.5-pro',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+  ],
 };
