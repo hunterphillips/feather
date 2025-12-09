@@ -10,8 +10,9 @@ import {
   updateConfig,
   getTools,
   updateTools,
-} from './db.js';
+} from './db/index.js';
 import { handleConsensusChat } from './workflows/consensus.js';
+import chatsRouter from './routes/chats.js';
 
 export const app = express();
 
@@ -74,6 +75,9 @@ app.post('/api/config', async (req, res) => {
   }
 });
 
+// Mount chat routes
+app.use('/api/chats', chatsRouter);
+
 // Main chat endpoint with streaming
 app.post('/api/chat', async (req, res) => {
   try {
@@ -98,16 +102,11 @@ app.post('/api/chat', async (req, res) => {
     // Get provider instance
     const providerInstance = getProvider(provider, model);
 
-    // Prepend system context if provided
-    let finalMessages = messages;
-    if (systemContext) {
-      finalMessages = [{ role: 'system', content: systemContext }, ...messages];
-    }
-
     // Stream response using Vercel AI SDK
     const result = await streamText({
       model: providerInstance,
-      messages: finalMessages,
+      messages: messages,
+      ...(systemContext && { system: systemContext }),
     });
 
     // Use Vercel Data Stream Protocol (compatible with useChat hook)

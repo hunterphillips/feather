@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useChat } from '@ai-sdk/react';
 import { ChatContainer } from './components/chat/ChatContainer';
 import { InputArea } from './components/chat/InputArea';
 import { ModelSelector } from './components/chat/ModelSelector';
@@ -7,13 +6,25 @@ import { Sidebar } from './components/Sidebar';
 import { Toast, useToast } from './components/ui/toast';
 import { useConfigStore } from './store/config-store';
 import { initializeToolRegistry } from './components/tools';
+import { useChatSession } from './hooks/useChatSession';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { currentProvider, currentModel, tools, loadConfig } = useConfigStore();
+  const { loadConfig } = useConfigStore();
   const { toast, showToast, hideToast } = useToast();
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  // Get all chat state and handlers from custom hook
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    error,
+    stop,
+    handleNewChat,
+    handleSelectChat,
+  } = useChatSession();
 
   // Initialize tool registry once on mount
   useEffect(() => {
@@ -24,42 +35,6 @@ function App() {
   useEffect(() => {
     loadConfig();
   }, [loadConfig]);
-
-  // 1. Identify Workflow Tool (Target Endpoint)
-  const workflowTool = tools.find((tool) => tool.enabled && tool.endpoint);
-
-  // 2. Aggregate Context from Client-Side Tools
-  // Find all enabled tools that do NOT have an endpoint but include additional context
-  const systemContext = tools
-    .filter((t) => t.enabled && !t.endpoint && t.config?.prompt)
-    .map((t) => t.config.prompt)
-    .join('\n\n');
-
-  // 3. Construct Dynamic Endpoint
-  const apiEndpoint = workflowTool
-    ? `${API_URL}/api/${workflowTool.endpoint}`
-    : `${API_URL}/api/chat`;
-
-  // 4. Construct Request Body
-  const requestBody = {
-    toolConfig: (workflowTool || {})?.config,
-    systemContext: systemContext,
-    provider: currentProvider,
-    model: currentModel,
-  };
-
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    error,
-    stop,
-  } = useChat({
-    api: apiEndpoint,
-    body: requestBody,
-  });
 
   // Show toast on error
   useEffect(() => {
@@ -74,6 +49,8 @@ function App() {
       <Sidebar
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        onNewChat={handleNewChat}
+        onSelectChat={handleSelectChat}
       />
 
       {/* Main Content Area */}

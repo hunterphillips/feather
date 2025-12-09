@@ -53,7 +53,7 @@ describe('POST /api/chat', () => {
     expect(res.body.error).toMatch(/missing/i);
   });
 
-  it('prepends system context when provided', async () => {
+  it('includes system context as separate parameter when provided', async () => {
     vi.mocked(ai.streamText).mockResolvedValue({
       pipeDataStreamToResponse: (res: any) => {
         res.write('Response');
@@ -72,10 +72,8 @@ describe('POST /api/chat', () => {
 
     expect(ai.streamText).toHaveBeenCalledWith(
       expect.objectContaining({
-        messages: expect.arrayContaining([
-          { role: 'system', content: 'You are helpful' },
-          { role: 'user', content: 'Hello' },
-        ]),
+        messages: [{ role: 'user', content: 'Hello' }],
+        system: 'You are helpful',
       })
     );
   });

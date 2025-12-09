@@ -48,12 +48,41 @@ export type ToolPillComponent = React.ComponentType<ToolPillProps>;
 export type ToolPanelComponent = React.ComponentType<ToolPanelProps>;
 export type ToolConfigComponent = React.ComponentType<ToolConfigProps>;
 
+export interface ChatMessage {
+  id: string;
+  role: 'system' | 'user' | 'assistant' | 'data';
+  content: string;
+  createdAt: string;
+}
+
+export interface Chat {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatMessage[];
+  provider: string;
+  model: string;
+  systemContext?: string;
+}
+
+export interface ChatListItem {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ConfigState {
   currentProvider: string;
   currentModel: string;
   availableModels: AvailableModels | null;
   isConfigLoaded: boolean;
   tools: Tool[];
+
+  // Chat state
+  chats: ChatListItem[];
+  currentChatId: string | null;
 
   setProvider: (provider: string) => void;
   setModel: (model: string) => void;
@@ -73,4 +102,13 @@ export interface ConfigState {
     model?: string;
     tools?: Tool[];
   }) => Promise<void>;
+
+  // Chat methods
+  loadChats: () => Promise<void>;
+  loadChat: (id: string) => Promise<Chat | null>;
+  createChat: (title?: string) => Promise<Chat>;
+  updateChat: (id: string, updates: Partial<Chat>) => Promise<void>;
+  deleteChat: (id: string) => Promise<void>;
+  setCurrentChat: (id: string | null) => void;
+  saveMessages: (chatId: string, messages: any[]) => Promise<void>;
 }

@@ -3,25 +3,22 @@ import { JSONFile } from 'lowdb/node';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import type { Tool, Chat } from '../types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export interface Tool {
-  id: string;
-  label: string;
-  enabled: boolean;
-  config: Record<string, unknown>;
-  endpoint?: string; // Relative path from API base (ex. 'workflow/consensus')
-}
-
+// Storage schema
 export interface Database {
   config: {
     provider: string;
     model: string;
   };
   tools: Tool[];
+  chats: Chat[];
+  currentChatId: string | null;
 }
 
+// Default data
 const defaultData: Database = {
   config: {
     provider: 'openai',
@@ -44,16 +41,18 @@ const defaultData: Database = {
         models: [
           { provider: 'openai', model: 'gpt-5.1' },
           { provider: 'anthropic', model: 'claude-opus-4-5' },
-          { provider: 'google', model: 'gemini-3-pro' },
+          { provider: 'google', model: 'gemini-3-pro-preview' },
         ],
       },
       endpoint: 'workflow/consensus',
     },
   ],
+  chats: [],
+  currentChatId: null,
 };
 
 // Initialize database
-const dataDir = path.join(__dirname, '../data');
+const dataDir = path.join(__dirname, '../../data');
 const file = path.join(dataDir, 'db.json');
 
 // Ensure data directory exists
@@ -68,36 +67,5 @@ export const db = new Low<Database>(adapter, defaultData);
 export async function initializeDatabase() {
   await db.read();
   db.data ||= defaultData;
-  await db.write();
-}
-
-// Helper functions
-export async function getConfig() {
-  return db.data.config;
-}
-
-export async function updateConfig(updates: Partial<Database['config']>) {
-  db.data.config = { ...db.data.config, ...updates };
-  await db.write();
-}
-
-export async function getTools() {
-  return db.data.tools;
-}
-
-export async function getTool(id: string) {
-  return db.data.tools.find((tool) => tool.id === id);
-}
-
-export async function updateTool(id: string, updates: Partial<Tool>) {
-  const toolIndex = db.data.tools.findIndex((tool) => tool.id === id);
-  if (toolIndex !== -1) {
-    db.data.tools[toolIndex] = { ...db.data.tools[toolIndex], ...updates };
-    await db.write();
-  }
-}
-
-export async function updateTools(tools: Tool[]) {
-  db.data.tools = tools;
   await db.write();
 }
