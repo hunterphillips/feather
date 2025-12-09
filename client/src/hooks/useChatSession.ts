@@ -66,10 +66,7 @@ export function useChatSession() {
         saveMessages(currentChatId, messages);
 
         // Auto-generate title from first user message (once per chat)
-        if (
-          messages.length >= 1 &&
-          !autoTitledRef.current.has(currentChatId)
-        ) {
+        if (messages.length >= 1 && !autoTitledRef.current.has(currentChatId)) {
           const firstUserMsg = messages.find((m) => m.role === 'user');
           if (firstUserMsg) {
             autoTitledRef.current.add(currentChatId);
@@ -86,30 +83,31 @@ export function useChatSession() {
   }, [messages, currentChatId, saveMessages, updateChat]);
 
   // Handle new chat
-  const handleNewChat = useCallback(async () => {
-    const newChat = await createChat('New Chat');
+  const handleNewChat = useCallback(() => {
     setMessages([]);
-    setCurrentChat(newChat.id);
-    autoTitledRef.current.delete(newChat.id);
-  }, [createChat, setMessages, setCurrentChat]);
+    setCurrentChat(null);
+  }, [setMessages, setCurrentChat, currentChatId, messages]);
 
   // Handle chat selection
   const handleSelectChat = useCallback(
     async (id: string) => {
       const chat = await loadChat(id);
-      if (chat) {
-        const loadedMessages: Message[] = chat.messages.map((msg) => ({
-          id: msg.id,
-          role: msg.role,
-          content: msg.content,
-          createdAt: new Date(msg.createdAt),
-        }));
+      if (!chat) return;
 
+      const loadedMessages: Message[] = chat.messages.map((msg) => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        createdAt: new Date(msg.createdAt),
+      }));
+
+      setCurrentChat(id);
+      // set messages after a delay so useChat has processed the id change
+      setTimeout(() => {
         setMessages(loadedMessages);
-        setCurrentChat(id);
-      }
+      }, 0);
     },
-    [loadChat, setMessages, setCurrentChat]
+    [loadChat, setMessages, setCurrentChat, currentChatId]
   );
 
   // Wrap handleSubmit to create chat if needed
