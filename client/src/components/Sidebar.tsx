@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useConfigStore } from '@/store/config-store';
 import { ChatListItem } from './chat/ChatListItem';
 import { Button } from './ui/button';
+import { Dialog } from './ui/dialog';
 import featherLogo from '@/assets/feather-logo-b.svg';
 
 interface SidebarProps {
@@ -20,14 +21,8 @@ export function Sidebar({
   onSelectChat,
 }: SidebarProps) {
   const [isHovering, setIsHovering] = React.useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
-  const {
-    chats,
-    currentChatId,
-    loadChats,
-    deleteChat,
-  } = useConfigStore();
+  const { chats, currentChatId, loadChats, deleteChat } = useConfigStore();
 
   // Load chats on mount
   useEffect(() => {
@@ -37,19 +32,12 @@ export function Sidebar({
   const handleDeleteClick = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setChatToDelete(id);
-    setDeleteModalOpen(true);
   };
 
-  const confirmDelete = async () => {
+  const handleConfirmDelete = async () => {
     if (chatToDelete) {
       await deleteChat(chatToDelete);
     }
-    setDeleteModalOpen(false);
-    setChatToDelete(null);
-  };
-
-  const cancelDelete = () => {
-    setDeleteModalOpen(false);
     setChatToDelete(null);
   };
 
@@ -101,7 +89,9 @@ export function Sidebar({
             )}
           >
             <PenSquare className="h-5 w-5 text-foreground flex-shrink-0" />
-            {isOpen && <span className="text-sm text-foreground">New chat</span>}
+            {isOpen && (
+              <span className="text-sm text-foreground">New chat</span>
+            )}
           </button>
         </div>
 
@@ -121,31 +111,17 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {deleteModalOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={cancelDelete}
-        >
-          <div
-            className="bg-background border border-border rounded-lg p-6 max-w-sm"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold mb-2">Delete chat?</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              This action cannot be undone.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={cancelDelete}>
-                Cancel
-              </Button>
-              <Button variant="default" onClick={confirmDelete}>
-                Delete
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={!!chatToDelete}
+        onClose={() => setChatToDelete(null)}
+        title="Delete chat?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleConfirmDelete}
+        variant="destructive"
+      />
     </>
   );
 }
