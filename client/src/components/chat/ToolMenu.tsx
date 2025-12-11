@@ -4,11 +4,11 @@ import { useConfigStore } from '@/store/config-store';
 import { ToolMenuItem } from './ToolMenuItem';
 import { toolRegistry } from '@/lib/tool-registry';
 
-interface InputMenuProps {
+interface ToolMenuProps {
   onOpenPanel?: (toolId: string) => void;
 }
 
-export function InputMenu({ onOpenPanel }: InputMenuProps) {
+export function ToolMenu({ onOpenPanel }: ToolMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { tools, toggleTool } = useConfigStore();

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { PenSquare, PanelLeft } from 'lucide-react';
+import { PenSquare, PanelLeft, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useConfigStore } from '@/store/config-store';
 import { ChatListItem } from './chat/ChatListItem';
 import { Button } from './ui/button';
 import { Dialog } from './ui/dialog';
+import { DropdownMenu } from './ui/dropdown-menu';
 import featherLogo from '@/assets/feather-logo-b.svg';
+import style from 'react-syntax-highlighter/dist/esm/styles/hljs/a11y-dark';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,16 +24,44 @@ export function Sidebar({
 }: SidebarProps) {
   const [isHovering, setIsHovering] = React.useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
-  const { chats, currentChatId, loadChats, deleteChat } = useConfigStore();
+  const [dropdownMenu, setDropdownMenu] = useState<{
+    chatId: string;
+    anchorEl: HTMLElement;
+  } | null>(null);
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+
+  const { chats, currentChatId, loadChats, deleteChat, updateChat } =
+    useConfigStore();
 
   // Load chats on mount
   useEffect(() => {
     loadChats();
   }, [loadChats]);
 
-  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setChatToDelete(id);
+  const handleMenuClick = (
+    e: React.MouseEvent,
+    chatId: string,
+    buttonEl: HTMLButtonElement
+  ) => {
+    setDropdownMenu({
+      chatId,
+      anchorEl: buttonEl,
+    });
+  };
+
+  const handleRename = (chatId: string) => {
+    setEditingChatId(chatId);
+    setDropdownMenu(null);
+  };
+
+  const handleSaveRename = async (chatId: string, newTitle: string) => {
+    await updateChat(chatId, { title: newTitle });
+    setEditingChatId(null);
+  };
+
+  const handleDeleteClick = (chatId: string) => {
+    setChatToDelete(chatId);
+    setDropdownMenu(null);
   };
 
   const handleConfirmDelete = async () => {
@@ -40,6 +70,22 @@ export function Sidebar({
     }
     setChatToDelete(null);
   };
+
+  const dropdownMenuItems = dropdownMenu
+    ? [
+        {
+          label: 'Rename',
+          icon: <Pencil className="h-4 w-4" />,
+          onClick: () => handleRename(dropdownMenu.chatId),
+        },
+        {
+          label: 'Delete',
+          icon: <Trash2 className="h-4 w-4" />,
+          onClick: () => handleDeleteClick(dropdownMenu.chatId),
+          className: 'hover:text-red-400',
+        },
+      ]
+    : [];
 
   return (
     <>
@@ -103,13 +149,24 @@ export function Sidebar({
                 key={chat.id}
                 chat={chat}
                 isActive={chat.id === currentChatId}
+                isEditing={chat.id === editingChatId}
                 onClick={() => onSelectChat(chat.id)}
-                onDelete={(e) => handleDeleteClick(chat.id, e)}
+                onMenuClick={handleMenuClick}
+                onRename={handleSaveRename}
+                onCancelEdit={() => setEditingChatId(null)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Dropdown Menu */}
+      <DropdownMenu
+        open={!!dropdownMenu}
+        onClose={() => setDropdownMenu(null)}
+        anchorEl={dropdownMenu?.anchorEl || null}
+        items={dropdownMenuItems}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog

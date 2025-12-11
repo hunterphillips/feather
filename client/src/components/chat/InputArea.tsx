@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Square } from 'lucide-react';
-import { InputMenu } from './InputMenu';
+import { ToolMenu } from './ToolMenu';
 import { ToolPill } from './ToolPill';
 import { toolRegistry } from '@/lib/tool-registry';
 import { useConfigStore } from '@/store/config-store';
@@ -53,7 +53,7 @@ export function InputArea({
         <div className="max-w-3xl mx-auto space-y-2">
           <div className="flex gap-2 bg-accent/50 rounded-lg p-4 items-end">
             {/* Plus Menu */}
-            <InputMenu onOpenPanel={setActivePanelToolId} />
+            <ToolMenu onOpenPanel={setActivePanelToolId} />
 
             <textarea
               value={input}
