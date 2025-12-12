@@ -92,7 +92,9 @@ export function useChatSession() {
   const handleSelectChat = useCallback(
     async (id: string) => {
       const chat = await loadChat(id);
-      if (!chat) return;
+      if (!chat) {
+        throw new Error('Chat not found');
+      }
 
       const loadedMessages: Message[] = chat.messages.map((msg) => ({
         id: msg.id,
@@ -112,13 +114,16 @@ export function useChatSession() {
 
   // Wrap handleSubmit to create chat if needed
   const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
+    async (e: React.FormEvent): Promise<{ newChatId?: string }> => {
       if (!currentChatId && input.trim()) {
         const newChat = await createChat('New Chat');
         setCurrentChat(newChat.id);
         autoTitledRef.current.delete(newChat.id);
+        originalHandleSubmit(e);
+        return { newChatId: newChat.id };
       }
       originalHandleSubmit(e);
+      return {};
     },
     [currentChatId, input, createChat, setCurrentChat, originalHandleSubmit]
   );

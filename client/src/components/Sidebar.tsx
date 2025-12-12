@@ -3,17 +3,17 @@ import { PenSquare, PanelLeft, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useConfigStore } from '@/store/config-store';
 import { ChatListItem } from './chat/ChatListItem';
-import { Button } from './ui/button';
 import { Dialog } from './ui/dialog';
 import { DropdownMenu } from './ui/dropdown-menu';
 import featherLogo from '@/assets/feather-logo-b.svg';
-import style from 'react-syntax-highlighter/dist/esm/styles/hljs/a11y-dark';
 
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   onNewChat: () => void;
   onSelectChat: (id: string) => void;
+  onDeleteCurrentChat?: () => void;
+  currentChatId: string | null;
 }
 
 export function Sidebar({
@@ -21,6 +21,8 @@ export function Sidebar({
   onToggle,
   onNewChat,
   onSelectChat,
+  onDeleteCurrentChat,
+  currentChatId,
 }: SidebarProps) {
   const [isHovering, setIsHovering] = React.useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
@@ -30,8 +32,7 @@ export function Sidebar({
   } | null>(null);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
 
-  const { chats, currentChatId, loadChats, deleteChat, updateChat } =
-    useConfigStore();
+  const { chats, loadChats, deleteChat, updateChat } = useConfigStore();
 
   // Load chats on mount
   useEffect(() => {
@@ -39,7 +40,7 @@ export function Sidebar({
   }, [loadChats]);
 
   const handleMenuClick = (
-    e: React.MouseEvent,
+    _e: React.MouseEvent,
     chatId: string,
     buttonEl: HTMLButtonElement
   ) => {
@@ -66,7 +67,11 @@ export function Sidebar({
 
   const handleConfirmDelete = async () => {
     if (chatToDelete) {
+      const wasCurrentChat = chatToDelete === currentChatId;
       await deleteChat(chatToDelete);
+      if (wasCurrentChat) {
+        onDeleteCurrentChat?.();
+      }
     }
     setChatToDelete(null);
   };
