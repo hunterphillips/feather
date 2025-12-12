@@ -119,13 +119,25 @@ export function useChatSession() {
         const newChat = await createChat('New Chat');
         setCurrentChat(newChat.id);
         autoTitledRef.current.delete(newChat.id);
+
+        // Save initial user message before submitting
+        const userMessage = {
+          id: crypto.randomUUID(),
+          role: 'user' as const,
+          content: input,
+          createdAt: new Date().toISOString(),
+        };
+        await saveMessages(newChat.id, [userMessage]);
+
+        // Submit the message (adds to useChat state and starts API call)
         originalHandleSubmit(e);
+
         return { newChatId: newChat.id };
       }
       originalHandleSubmit(e);
       return {};
     },
-    [currentChatId, input, createChat, setCurrentChat, originalHandleSubmit]
+    [currentChatId, input, createChat, setCurrentChat, saveMessages, originalHandleSubmit]
   );
 
   return {
