@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ConfigState, AvailableModels, Chat, ChatListItem } from '@/lib/types';
+import type { ConfigState, AvailableModels, Chat } from '@/lib/types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
