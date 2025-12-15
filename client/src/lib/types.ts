@@ -95,8 +95,11 @@ export interface ConfigState {
   chats: ChatListItem[];
   currentChatId: string | null;
 
-  // Attachment state (transient, per-message)
-  pendingAttachments: Attachment[];
+  // File state (files selected but not yet uploaded)
+  pendingFiles: File[];
+
+  // Current attachments being submitted (uploaded files)
+  currentAttachments: Attachment[];
 
   setProvider: (provider: string) => void;
   setModel: (model: string) => void;
@@ -126,8 +129,11 @@ export interface ConfigState {
   setCurrentChat: (id: string | null) => void;
   saveMessages: (chatId: string, messages: any[]) => Promise<void>;
 
-  // Attachment methods
-  addAttachment: (attachment: Attachment) => void;
-  removeAttachment: (id: string) => void;
-  clearAttachments: () => void;
+  // File methods
+  addPendingFile: (file: File) => void;
+  removePendingFile: (fileId: string) => void;
+  clearPendingFiles: () => void;
+
+  // Current attachments methods (for active submission)
+  setCurrentAttachments: (attachments: Attachment[]) => void;
 }

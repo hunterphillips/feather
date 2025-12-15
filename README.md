@@ -83,7 +83,10 @@ VITE_API_URL=http://localhost:3001
 │   │   ├── index.ts        # Main server
 │   │   ├── providers.ts    # AI SDK provider registry
 │   │   ├── config.ts       # Environment config
-│   │   └── types.ts        # TypeScript interfaces
+│   │   ├── types.ts        # TypeScript interfaces
+│   │   ├── /routes         # API routes
+│   │   └── /lib            # Utilities
+│   ├── /data               # db.json, uploads
 │   ├── /tests              # Vitest tests
 │   └── package.json
 │

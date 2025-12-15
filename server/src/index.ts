@@ -100,8 +100,8 @@ app.post('/api/chat', async (req, res) => {
       model,
       messages,
       systemContext,
-      attachments,
       toolConfig,
+      attachments,
       workflowId,
     } = req.body as ChatRequest;
 

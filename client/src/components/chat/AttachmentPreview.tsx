@@ -1,26 +1,30 @@
+import { useEffect, useState } from 'react';
 import { X, File, FileText, FileCode, Image } from 'lucide-react';
-import type { Attachment } from '@/lib/types';
 
 interface AttachmentPreviewProps {
-  attachment: Attachment;
+  file: File;
   onRemove: () => void;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+export function AttachmentPreview({ file, onRemove }: AttachmentPreviewProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-export function AttachmentPreview({
-  attachment,
-  onRemove,
-}: AttachmentPreviewProps) {
-  const isImage = attachment.mimeType.startsWith('image/');
-  const isPdf = attachment.mimeType === 'application/pdf';
+  const isImage = file.type.startsWith('image/');
+  const isPdf = file.type === 'application/pdf';
   const isCode =
-    attachment.mimeType.includes('javascript') ||
-    attachment.mimeType.includes('typescript') ||
-    attachment.mimeType === 'application/json';
-  const isText = attachment.mimeType.startsWith('text/');
+    file.type.includes('javascript') ||
+    file.type.includes('typescript') ||
+    file.type === 'application/json';
+  const isText = file.type.startsWith('text/');
 
-  const fileUrl = `${API_URL}/api/uploads/${attachment.path}`;
+  // Create object URL for image preview
+  useEffect(() => {
+    if (isImage) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [file, isImage]);
 
   const getIcon = () => {
     if (isImage) return Image;
@@ -34,10 +38,10 @@ export function AttachmentPreview({
 
   return (
     <div className="relative group inline-flex items-center gap-2 p-2 bg-accent border border-border rounded-lg">
-      {isImage ? (
+      {isImage && previewUrl ? (
         <img
-          src={fileUrl}
-          alt={attachment.name}
+          src={previewUrl}
+          alt={file.name}
           className="w-12 h-12 object-cover rounded"
         />
       ) : (
@@ -48,10 +52,10 @@ export function AttachmentPreview({
 
       <div className="flex flex-col min-w-0">
         <span className="text-xs text-foreground truncate max-w-[150px]">
-          {attachment.name}
+          {file.name}
         </span>
         <span className="text-xs text-muted-foreground">
-          {(attachment.size / 1024).toFixed(1)} KB
+          {(file.size / 1024).toFixed(1)} KB
         </span>
       </div>
 

@@ -7,7 +7,6 @@ import { FilePicker } from './FilePicker';
 import { ToolPillContainer } from './ToolPillContainer';
 import { toolRegistry } from '@/lib/tool-registry';
 import { useConfigStore } from '@/store/config-store';
-import { useFileUpload } from '@/hooks/useFileUpload';
 import birdIcon from '@/assets/bird.png';
 
 interface InputAreaProps {
@@ -28,11 +27,10 @@ export function InputArea({
   const [activePanelToolId, setActivePanelToolId] = useState<string | null>(
     null
   );
-  const { tools, currentChatId, pendingAttachments, removeAttachment } =
+  const { tools, pendingFiles, addPendingFile, removePendingFile } =
     useConfigStore();
-  const { uploadFiles } = useFileUpload(currentChatId);
 
-  const hasAttachments = pendingAttachments.length > 0;
+  const hasFiles = pendingFiles.length > 0;
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -41,23 +39,25 @@ export function InputArea({
     }
   };
 
-  const handleFilesSelected = async (files: FileList) => {
-    await uploadFiles(files);
+  const handleFilesSelected = (files: FileList) => {
+    Array.from(files).forEach((file) => addPendingFile(file));
   };
+
+  const getFileId = (file: File) => `${file.name}-${file.lastModified}`;
 
   return (
     <>
       <form onSubmit={handleSubmit} className="p-4 bg-background">
         <div className="max-w-3xl mx-auto space-y-2">
           <div className="flex flex-col gap-2 bg-accent/50 rounded-lg p-4">
-            {/* Attachment Previews */}
-            {hasAttachments && (
+            {/* File Previews */}
+            {hasFiles && (
               <div className="flex flex-wrap gap-2 pb-2">
-                {pendingAttachments.map((att) => (
+                {pendingFiles.map((file) => (
                   <AttachmentPreview
-                    key={att.id}
-                    attachment={att}
-                    onRemove={() => removeAttachment(att.id)}
+                    key={getFileId(file)}
+                    file={file}
+                    onRemove={() => removePendingFile(getFileId(file))}
                   />
                 ))}
               </div>
@@ -80,7 +80,7 @@ export function InputArea({
                 disabled={isLoading}
                 rows={1}
                 className={`${
-                  hasAttachments && 'mt-2'
+                  hasFiles && 'mt-2'
                 } flex-1 leading-none resize-none border-0 bg-transparent focus-visible:outline-none text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 min-h-[24px] max-h-[200px] overflow-y-auto`}
                 onInput={(e) => {
                   const target = e.target as HTMLTextAreaElement;
@@ -104,7 +104,7 @@ export function InputArea({
               ) : (
                 <Button
                   type="submit"
-                  disabled={!input.trim() && !hasAttachments}
+                  disabled={!input.trim() && !hasFiles}
                   className="rounded-full p-0"
                 >
                   <img

@@ -2,6 +2,8 @@ import { useCallback } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { useConfigStore } from '../store/config-store';
 import { useChatPersistence } from './useChatPersistence';
+import { useFileUpload } from './useFileUpload';
+import type { Attachment } from '@/lib/types';
 
 export function useChatSession() {
   const {
@@ -14,23 +16,23 @@ export function useChatSession() {
     loadChat,
     saveMessages,
     updateChat,
-    pendingAttachments,
-    clearAttachments,
+    pendingFiles,
+    clearPendingFiles,
+    currentAttachments,
+    setCurrentAttachments,
   } = useConfigStore();
 
+  const { uploadFilesToChat, isUploading: isUploadingFiles } = useFileUpload();
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-  // 1. Identify Workflow Tool (Target Endpoint)
   const workflowTool = tools.find((tool) => tool.enabled && tool.endpoint);
 
-  // 2. Aggregate Context from Client-Side Tools
+  // Aggregate Context from Client-Side Tools
   // Find all enabled tools that do NOT have an endpoint but include additional context
   const systemContext = tools
     .filter((t) => t.enabled && !t.endpoint && t.config?.prompt)
     .map((t) => t.config.prompt)
     .join('\n\n');
 
-  // 3. Always use /api/chat endpoint (server routes internally based on workflowId)
   const apiEndpoint = `${API_URL}/api/chat`;
 
   const {
@@ -50,7 +52,7 @@ export function useChatSession() {
       systemContext: systemContext,
       provider: currentProvider,
       model: currentModel,
-      attachments: pendingAttachments, // Server will attach to last user message
+      attachments: currentAttachments, // Server will attach to last user message
       workflowId: workflowTool?.id, // Server uses this to route to workflow handler
     },
     id: currentChatId || undefined,
@@ -107,13 +109,13 @@ export function useChatSession() {
     async (e: React.FormEvent): Promise<{ newChatId?: string }> => {
       e.preventDefault();
 
-      // Allow submission if there's either text or an attachment
-      if (!input.trim() && pendingAttachments.length < 1) return {};
+      // Allow submission if there's either text or files
+      if (!input.trim() && pendingFiles.length < 1) return {};
 
       let chatId = currentChatId;
       let newChatId: string | undefined;
 
-      // Create chat if this is the first message
+      // Create chat FIRST if this is the first message
       if (!chatId) {
         const newChat = await createChat('New Chat');
         chatId = newChat.id;
@@ -121,33 +123,51 @@ export function useChatSession() {
         setCurrentChat(chatId);
       }
 
-      // Construct complete user message with attachments
+      // Upload files now that we have a chatId
+      let uploadedAttachments: Attachment[] = [];
+      if (pendingFiles.length > 0) {
+        uploadedAttachments = await uploadFilesToChat(pendingFiles, chatId);
+
+        // Warn if some files failed to upload
+        if (uploadedAttachments.length < pendingFiles.length) {
+          const failedCount = pendingFiles.length - uploadedAttachments.length;
+          console.warn(`${failedCount} file(s) failed to upload`);
+        }
+      }
+
+      // Set attachments in state so they're included in the next request body
+      setCurrentAttachments(uploadedAttachments);
+
+      // Note: AI SDK will strip attachments from HTTP request but keep them in client stat
       const userMessage = {
         role: 'user' as const,
         content: input,
-        ...(pendingAttachments.length > 0 && {
-          attachments: [...pendingAttachments],
+        ...(uploadedAttachments.length > 0 && {
+          attachments: uploadedAttachments,
         }),
       };
 
-      // Append triggers API call with complete message
+      // Append triggers API call with attachments in body
       await append(userMessage);
 
-      // Clear input and attachments after successful append
+      // Clear state after successful append
       setInput('');
-      clearAttachments();
+      clearPendingFiles();
+      setCurrentAttachments([]);
 
       return { newChatId };
     },
     [
       input,
       currentChatId,
-      pendingAttachments,
+      pendingFiles,
       createChat,
       setCurrentChat,
+      uploadFilesToChat,
       append,
       setInput,
-      clearAttachments,
+      clearPendingFiles,
+      setCurrentAttachments,
     ]
   );
 
@@ -156,7 +176,7 @@ export function useChatSession() {
     messages,
     input,
     handleInputChange,
-    isLoading,
+    isLoading: isLoading || isUploadingFiles, // Combined busy state
     error,
     stop,
 

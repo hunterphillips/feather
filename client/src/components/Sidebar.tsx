@@ -148,7 +148,6 @@ export function Sidebar({
 
         {/* Chat List */}
         {isOpen && (
-          // space-y-1
           <div className="flex-1 overflow-y-auto p-2">
             {chats.map((chat) => (
               <ChatListItem

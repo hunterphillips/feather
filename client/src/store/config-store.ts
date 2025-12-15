@@ -11,7 +11,8 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
   tools: [],
   chats: [],
   currentChatId: null,
-  pendingAttachments: [],
+  pendingFiles: [],
+  currentAttachments: [],
 
   setProvider: (provider) => {
     set({ currentProvider: provider });
@@ -251,20 +252,29 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
     }
   },
 
-  // Attachment methods
-  addAttachment: (attachment) => {
+  // File methods
+  addPendingFile: (file: File) => {
     set((state) => ({
-      pendingAttachments: [...state.pendingAttachments, attachment],
+      pendingFiles: [...state.pendingFiles, file],
     }));
   },
 
-  removeAttachment: (id) => {
+  removePendingFile: (fileId: string) => {
     set((state) => ({
-      pendingAttachments: state.pendingAttachments.filter((a) => a.id !== id),
+      pendingFiles: state.pendingFiles.filter((f) => {
+        // Use name + lastModified as unique identifier
+        const id = `${f.name}-${f.lastModified}`;
+        return id !== fileId;
+      }),
     }));
   },
 
-  clearAttachments: () => {
-    set({ pendingAttachments: [] });
+  clearPendingFiles: () => {
+    set({ pendingFiles: [] });
+  },
+
+  // Current attachments methods
+  setCurrentAttachments: (attachments) => {
+    set({ currentAttachments: attachments });
   },
 }));

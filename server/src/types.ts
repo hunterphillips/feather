@@ -10,7 +10,7 @@ export interface ChatRequest {
   messages: Message[];
   systemContext?: string;
   toolConfig?: Record<string, unknown>;
-  attachments?: Attachment[]; // Pending attachments for the last user message
+  attachments?: Attachment[]; // Attachments for the last user message
   workflowId?: string; // workflow identifier for routing
 }
 

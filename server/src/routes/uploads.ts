@@ -19,11 +19,18 @@ await fs.mkdir(UPLOADS_BASE, { recursive: true });
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
-    const chatId = req.body.chatId || 'temp';
+    const chatId = req.body.chatId;
+
+    // Require chatId - no temp uploads allowed
+    if (!chatId || chatId === 'temp') {
+      return cb(new Error('chatId is required'), '');
+    }
+
     // Sanitize: only allow alphanumeric, hyphens, underscores
     if (!/^[a-zA-Z0-9_-]+$/.test(chatId)) {
       return cb(new Error('Invalid chat ID'), '');
     }
+
     const chatDir = path.join(UPLOADS_BASE, chatId);
     await fs.mkdir(chatDir, { recursive: true });
     cb(null, chatDir);
@@ -46,7 +53,6 @@ const upload = multer({
       'image/jpeg',
       'image/gif',
       'image/webp',
-      // 'image/svg+xml',
       'application/pdf',
       'text/plain',
       'text/markdown',
@@ -77,7 +83,13 @@ router.post('/', upload.single('file'), async (req, res) => {
       return;
     }
 
-    const chatId = req.body.chatId || 'temp';
+    const chatId = req.body.chatId;
+
+    if (!chatId) {
+      res.status(400).json({ error: 'chatId is required' });
+      return;
+    }
+
     const relativePath = `${chatId}/${req.file.filename}`;
 
     // Extract text for documents if needed

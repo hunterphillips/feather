@@ -11,7 +11,6 @@ const ACCEPTED_FILE_TYPES = [
   'image/jpeg',
   'image/gif',
   'image/webp',
-  // 'image/svg+xml',
   'application/pdf',
   'text/plain',
   'text/markdown',
