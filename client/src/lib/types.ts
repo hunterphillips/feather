@@ -10,7 +10,7 @@ export interface Tool {
   label: string;
   enabled: boolean;
   config: Record<string, unknown>;
-  isWorkflow?: boolean;
+  endpoint?: string; // Relative path
 }
 
 // Icon type (lucide-react icon names)

@@ -45,8 +45,8 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
   },
 
   toggleTool: async (id, enabled) => {
-    // Workflow tools are mutually exclusive (only one can be enabled at a time)
-    // Any tool can provide system context via config.prompt
+    // Client-side tools (no endpoint) can be enabled alongside workflow tools
+    // Workflow tools (with endpoints) are mutually exclusive
     const targetTool = get().tools.find((t) => t.id === id);
 
     const tools = get().tools.map((tool) => {
@@ -54,7 +54,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
         return { ...tool, enabled };
       }
       // If enabling a workflow tool, disable other workflow tools
-      if (enabled && targetTool?.isWorkflow && tool.isWorkflow) {
+      if (enabled && targetTool?.endpoint && tool.endpoint) {
         return { ...tool, enabled: false };
       }
       return tool;
@@ -143,7 +143,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
     try {
       const { currentProvider, currentModel } = get();
       const systemContext = get()
-        .tools.filter((t) => t.enabled && t.config?.prompt)
+        .tools.filter((t) => t.enabled && !t.endpoint && t.config?.prompt)
         .map((t) => t.config.prompt)
         .join('\n\n');
 

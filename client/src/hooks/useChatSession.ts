@@ -24,12 +24,12 @@ export function useChatSession() {
 
   const { uploadFilesToChat, isUploading: isUploadingFiles } = useFileUpload();
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-  const workflowTool = tools.find((tool) => tool.enabled && tool.isWorkflow);
+  const workflowTool = tools.find((tool) => tool.enabled && tool.endpoint);
 
-  // Aggregate Context from Tools
-  // Any enabled tool can provide system context via config.prompt
+  // Aggregate Context from Client-Side Tools
+  // Find all enabled tools that do NOT have an endpoint but include additional context
   const systemContext = tools
-    .filter((t) => t.enabled && t.config?.prompt)
+    .filter((t) => t.enabled && !t.endpoint && t.config?.prompt)
     .map((t) => t.config.prompt)
     .join('\n\n');
 

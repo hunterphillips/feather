@@ -20,6 +20,7 @@ import {
   updateTools,
 } from './db/index.js';
 import { getWorkflowHandler } from './lib/workflow-router.js';
+import { handleConsensusChat } from './workflows/consensus.js';
 import './workflows/consensus.js'; // Import to trigger workflow registration
 import chatsRouter from './routes/chats.js';
 import uploadsRouter from './routes/uploads.js';
@@ -183,6 +184,9 @@ app.post('/api/chat', async (req, res) => {
     }
   }
 });
+
+// Consensus workflow endpoint
+app.post('/api/workflow/consensus', handleConsensusChat);
 
 // Only start server if not imported by tests
 if (import.meta.url === `file://${process.argv[1]}`) {
