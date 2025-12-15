@@ -1,5 +1,11 @@
 import type { Chat } from '../types.js';
 import { db } from './core.js';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const UPLOADS_BASE = path.join(__dirname, '../../data/uploads');
 
 export async function getChats() {
   return db.data.chats || [];
@@ -28,6 +34,14 @@ export async function updateChat(id: string, updates: Partial<Chat>) {
 export async function deleteChat(id: string) {
   const index = db.data.chats.findIndex((chat) => chat.id === id);
   if (index !== -1) {
+    // Delete associated files
+    const chatUploadDir = path.join(UPLOADS_BASE, id);
+    try {
+      await fs.rm(chatUploadDir, { recursive: true, force: true });
+    } catch (error) {
+      console.warn(`Failed to delete files for chat ${id}:`, error);
+    }
+
     db.data.chats.splice(index, 1);
     await db.write();
     return true;

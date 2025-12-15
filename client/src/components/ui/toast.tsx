@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 
@@ -9,7 +9,7 @@ interface ToastProps {
 }
 
 export function Toast({ message, onClose, variant = 'error' }: ToastProps) {
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setTimeout(onClose, 5000);
     return () => clearTimeout(timer);
   }, [onClose]);
@@ -37,19 +37,19 @@ export function Toast({ message, onClose, variant = 'error' }: ToastProps) {
 }
 
 export function useToast() {
-  const [toast, setToast] = React.useState<{
+  const [toast, setToast] = useState<{
     message: string;
     variant: 'error' | 'success' | 'info';
   } | null>(null);
 
-  const showToast = React.useCallback(
+  const showToast = useCallback(
     (message: string, variant: 'error' | 'success' | 'info' = 'error') => {
       setToast({ message, variant });
     },
     []
   );
 
-  const hideToast = React.useCallback(() => {
+  const hideToast = useCallback(() => {
     setToast(null);
   }, []);
 

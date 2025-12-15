@@ -11,6 +11,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
   tools: [],
   chats: [],
   currentChatId: null,
+  pendingAttachments: [],
 
   setProvider: (provider) => {
     set({ currentProvider: provider });
@@ -241,11 +242,29 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
         role: msg.role,
         content: msg.content,
         createdAt: msg.createdAt?.toISOString?.() || new Date().toISOString(),
+        attachments: msg.attachments,
       }));
 
       await get().updateChat(chatId, { messages: chatMessages });
     } catch (error) {
       console.error('Failed to save messages:', error);
     }
+  },
+
+  // Attachment methods
+  addAttachment: (attachment) => {
+    set((state) => ({
+      pendingAttachments: [...state.pendingAttachments, attachment],
+    }));
+  },
+
+  removeAttachment: (id) => {
+    set((state) => ({
+      pendingAttachments: state.pendingAttachments.filter((a) => a.id !== id),
+    }));
+  },
+
+  clearAttachments: () => {
+    set({ pendingAttachments: [] });
   },
 }));

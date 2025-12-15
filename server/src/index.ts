@@ -2,8 +2,16 @@ import express from 'express';
 import cors from 'cors';
 import { streamText } from 'ai';
 import { config, validateProviderConfig } from './config.js';
-import { getProvider, AVAILABLE_MODELS } from './providers.js';
+import {
+  getProvider,
+  AVAILABLE_MODELS,
+  getModelCapabilities,
+} from './providers.js';
 import type { ChatRequest } from './types.js';
+import {
+  convertMessagesForAI,
+  validateMessageAttachments,
+} from './lib/message-converter.js';
 import {
   initializeDatabase,
   getConfig,
@@ -11,8 +19,11 @@ import {
   getTools,
   updateTools,
 } from './db/index.js';
+import { getWorkflowHandler } from './lib/workflow-router.js';
 import { handleConsensusChat } from './workflows/consensus.js';
+import './workflows/consensus.js'; // Import to trigger workflow registration
 import chatsRouter from './routes/chats.js';
+import uploadsRouter from './routes/uploads.js';
 
 export const app = express();
 
@@ -78,11 +89,21 @@ app.post('/api/config', async (req, res) => {
 // Mount chat routes
 app.use('/api/chats', chatsRouter);
 
+// Mount uploads routes
+app.use('/api/uploads', uploadsRouter);
+
 // Main chat endpoint with streaming
 app.post('/api/chat', async (req, res) => {
   try {
-    const { provider, model, messages, systemContext } =
-      req.body as ChatRequest;
+    const {
+      provider,
+      model,
+      messages,
+      systemContext,
+      attachments,
+      toolConfig,
+      workflowId,
+    } = req.body as ChatRequest;
 
     // Validation
     if (!provider || !model || !messages) {
@@ -99,15 +120,56 @@ app.post('/api/chat', async (req, res) => {
       return;
     }
 
-    // Get provider instance
-    const providerInstance = getProvider(provider, model);
+    // Attach pending attachments to last user message
+    if (attachments && attachments.length > 0) {
+      // Find last user message
+      for (let i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].role === 'user') {
+          messages[i].attachments = attachments;
+          break;
+        }
+      }
+    }
 
-    // Stream response using Vercel AI SDK
-    const result = await streamText({
-      model: providerInstance,
-      messages: messages,
-      ...(systemContext && { system: systemContext }),
-    });
+    // Check model capabilities for attachments
+    const capabilities = getModelCapabilities(provider, model);
+    for (const message of messages) {
+      const validation = validateMessageAttachments(
+        message,
+        capabilities.supportsVision
+      );
+      if (!validation.valid) {
+        res.status(400).json({ error: validation.error });
+        return;
+      }
+    }
+
+    // incorporate attachment content (if any) in messages
+    const multimodalMessages = await convertMessagesForAI(messages);
+
+    // Check for workflow handler
+    const workflowHandler = getWorkflowHandler(workflowId);
+
+    let result;
+
+    if (workflowHandler) {
+      result = await workflowHandler({
+        messages: multimodalMessages,
+        toolConfig: toolConfig || {},
+        systemContext,
+        provider,
+        model,
+      });
+    } else {
+      // Standard chat flow
+      const providerInstance = getProvider(provider, model);
+
+      result = await streamText({
+        model: providerInstance,
+        messages: multimodalMessages as any,
+        ...(systemContext && { system: systemContext }),
+      });
+    }
 
     // Use Vercel Data Stream Protocol (compatible with useChat hook)
     result.pipeDataStreamToResponse(res);

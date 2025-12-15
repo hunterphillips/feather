@@ -1,7 +1,7 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useChat } from '@ai-sdk/react';
-import type { Message } from '@ai-sdk/react';
 import { useConfigStore } from '../store/config-store';
+import { useChatPersistence } from './useChatPersistence';
 
 export function useChatSession() {
   const {
@@ -14,10 +14,9 @@ export function useChatSession() {
     loadChat,
     saveMessages,
     updateChat,
+    pendingAttachments,
+    clearAttachments,
   } = useConfigStore();
-
-  // Track if we've auto-generated a title for this chat
-  const autoTitledRef = useRef<Set<string>>(new Set());
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -31,117 +30,129 @@ export function useChatSession() {
     .map((t) => t.config.prompt)
     .join('\n\n');
 
-  // 3. Construct Dynamic Endpoint
-  const apiEndpoint = workflowTool
-    ? `${API_URL}/api/${workflowTool.endpoint}`
-    : `${API_URL}/api/chat`;
-
-  // 4. Construct Request Body
-  const requestBody = {
-    toolConfig: (workflowTool || {})?.config,
-    systemContext: systemContext,
-    provider: currentProvider,
-    model: currentModel,
-  };
+  // 3. Always use /api/chat endpoint (server routes internally based on workflowId)
+  const apiEndpoint = `${API_URL}/api/chat`;
 
   const {
     messages,
     input,
     handleInputChange,
-    handleSubmit: originalHandleSubmit,
     isLoading,
     error,
     stop,
     setMessages,
+    append,
+    setInput,
   } = useChat({
     api: apiEndpoint,
-    body: requestBody,
+    body: {
+      toolConfig: (workflowTool || {})?.config,
+      systemContext: systemContext,
+      provider: currentProvider,
+      model: currentModel,
+      attachments: pendingAttachments, // Server will attach to last user message
+      workflowId: workflowTool?.id, // Server uses this to route to workflow handler
+    },
     id: currentChatId || undefined,
   });
 
-  // Auto-save messages when they change
-  useEffect(() => {
-    if (currentChatId && messages.length > 0) {
-      const timeoutId = setTimeout(() => {
-        saveMessages(currentChatId, messages);
-
-        // Auto-generate title from first user message (once per chat)
-        if (messages.length >= 1 && !autoTitledRef.current.has(currentChatId)) {
-          const firstUserMsg = messages.find((m) => m.role === 'user');
-          if (firstUserMsg) {
-            autoTitledRef.current.add(currentChatId);
-            const title = firstUserMsg.content.trim().substring(0, 50);
-            updateChat(currentChatId, {
-              title: title.length < 50 ? title : title + '...',
-            });
-          }
-        }
-      }, 1000);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [messages, currentChatId, saveMessages, updateChat]);
+  // Handle persistence (auto-save and auto-title)
+  useChatPersistence({
+    currentChatId,
+    messages,
+    saveMessages,
+    updateChat,
+  });
 
   // Handle new chat
   const handleNewChat = useCallback(() => {
     setMessages([]);
     setCurrentChat(null);
-  }, [setMessages, setCurrentChat, currentChatId, messages]);
+  }, [setMessages, setCurrentChat]);
 
   // Handle chat selection
   const handleSelectChat = useCallback(
     async (id: string) => {
+      // dont reload if already viewing this chat
+      if (id === currentChatId) return;
+
       const chat = await loadChat(id);
       if (!chat) {
         throw new Error('Chat not found');
       }
 
-      const loadedMessages: Message[] = chat.messages.map((msg) => ({
+      // Map DB messages to SDK format, preserving attachments
+      const loadedMessages = chat.messages.map((msg) => ({
         id: msg.id,
         role: msg.role,
         content: msg.content,
         createdAt: new Date(msg.createdAt),
+        ...(msg.attachments &&
+          msg.attachments.length > 0 && {
+            attachments: msg.attachments,
+          }),
       }));
 
       setCurrentChat(id);
-      // set messages after a delay so useChat has processed the id change
+      // Delay to allow useChat to process id change
       setTimeout(() => {
         setMessages(loadedMessages);
       }, 0);
     },
-    [loadChat, setMessages, setCurrentChat, currentChatId]
+    [loadChat, setMessages, setCurrentChat, currentChatId, messages.length]
   );
 
   // Wrap handleSubmit to create chat if needed
   const handleSubmit = useCallback(
     async (e: React.FormEvent): Promise<{ newChatId?: string }> => {
-      if (!currentChatId && input.trim()) {
+      e.preventDefault();
+
+      // Allow submission if there's either text or an attachment
+      if (!input.trim() && pendingAttachments.length < 1) return {};
+
+      let chatId = currentChatId;
+      let newChatId: string | undefined;
+
+      // Create chat if this is the first message
+      if (!chatId) {
         const newChat = await createChat('New Chat');
-        setCurrentChat(newChat.id);
-        autoTitledRef.current.delete(newChat.id);
-
-        // Save initial user message before submitting
-        const userMessage = {
-          id: crypto.randomUUID(),
-          role: 'user' as const,
-          content: input,
-          createdAt: new Date().toISOString(),
-        };
-        await saveMessages(newChat.id, [userMessage]);
-
-        // Submit the message (adds to useChat state and starts API call)
-        originalHandleSubmit(e);
-
-        return { newChatId: newChat.id };
+        chatId = newChat.id;
+        newChatId = newChat.id;
+        setCurrentChat(chatId);
       }
-      originalHandleSubmit(e);
-      return {};
+
+      // Construct complete user message with attachments
+      const userMessage = {
+        role: 'user' as const,
+        content: input,
+        ...(pendingAttachments.length > 0 && {
+          attachments: [...pendingAttachments],
+        }),
+      };
+
+      // Append triggers API call with complete message
+      await append(userMessage);
+
+      // Clear input and attachments after successful append
+      setInput('');
+      clearAttachments();
+
+      return { newChatId };
     },
-    [currentChatId, input, createChat, setCurrentChat, saveMessages, originalHandleSubmit]
+    [
+      input,
+      currentChatId,
+      pendingAttachments,
+      createChat,
+      setCurrentChat,
+      append,
+      setInput,
+      clearAttachments,
+    ]
   );
 
   return {
-    // From useChat
+    // From useChat (attachments naturally included)
     messages,
     input,
     handleInputChange,
@@ -156,6 +167,5 @@ export function useChatSession() {
 
     // Computed values (for debugging/reference)
     apiEndpoint,
-    requestBody,
   };
 }
