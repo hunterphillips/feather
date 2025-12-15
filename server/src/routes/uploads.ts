@@ -20,6 +20,10 @@ await fs.mkdir(UPLOADS_BASE, { recursive: true });
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
     const chatId = req.body.chatId || 'temp';
+    // Sanitize: only allow alphanumeric, hyphens, underscores
+    if (!/^[a-zA-Z0-9_-]+$/.test(chatId)) {
+      return cb(new Error('Invalid chat ID'), '');
+    }
     const chatDir = path.join(UPLOADS_BASE, chatId);
     await fs.mkdir(chatDir, { recursive: true });
     cb(null, chatDir);
