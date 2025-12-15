@@ -155,8 +155,8 @@ router.get('/:chatId/:filename', async (req, res) => {
       return;
     }
 
-    await fs.access(filePath); // Check if file exists
-    res.sendFile(filePath);
+    await fs.access(normalizedPath); // Check if file exists
+    res.sendFile(normalizedPath);
   } catch (error) {
     res.status(404).json({ error: 'File not found' });
   }
