@@ -1,4 +1,4 @@
-import { MessageSquare, MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { ChatListItem } from '@/lib/types';
@@ -58,13 +58,11 @@ export function ChatListItem({
     <div
       onClick={isEditing ? undefined : onClick}
       className={cn(
-        'group flex items-center gap-3 p-3 rounded-lg transition-colors',
+        'group flex items-center gap-3 p-2 rounded-lg transition-colors',
         !isEditing && 'cursor-pointer',
         isActive ? 'bg-accent/70' : 'hover:bg-border'
       )}
     >
-      <MessageSquare className="h-4 w-4 text-foreground flex-shrink-0" />
-
       {isEditing ? (
         <div className="flex-1 flex items-center gap-2">
           <input

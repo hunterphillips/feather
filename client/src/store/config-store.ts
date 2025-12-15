@@ -11,6 +11,8 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
   tools: [],
   chats: [],
   currentChatId: null,
+  pendingFiles: [],
+  currentAttachments: [],
 
   setProvider: (provider) => {
     set({ currentProvider: provider });
@@ -241,11 +243,38 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
         role: msg.role,
         content: msg.content,
         createdAt: msg.createdAt?.toISOString?.() || new Date().toISOString(),
+        attachments: msg.attachments,
       }));
 
       await get().updateChat(chatId, { messages: chatMessages });
     } catch (error) {
       console.error('Failed to save messages:', error);
     }
+  },
+
+  // File methods
+  addPendingFile: (file: File) => {
+    set((state) => ({
+      pendingFiles: [...state.pendingFiles, file],
+    }));
+  },
+
+  removePendingFile: (fileId: string) => {
+    set((state) => ({
+      pendingFiles: state.pendingFiles.filter((f) => {
+        // Use name + lastModified as unique identifier
+        const id = `${f.name}-${f.lastModified}`;
+        return id !== fileId;
+      }),
+    }));
+  },
+
+  clearPendingFiles: () => {
+    set({ pendingFiles: [] });
+  },
+
+  // Current attachments methods
+  setCurrentAttachments: (attachments) => {
+    set({ currentAttachments: attachments });
   },
 }));

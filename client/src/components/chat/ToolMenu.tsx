@@ -35,9 +35,7 @@ export function ToolMenu({ onOpenPanel }: ToolMenuProps) {
       onOpenPanel(toolId);
     } else {
       // Enable the tool if not already enabled
-      if (!tool?.enabled) {
-        toggleTool(toolId, true);
-      }
+      if (!tool?.enabled) toggleTool(toolId, true);
 
       // If tool has a panel, open it explicitly
       if (hasPanel && onOpenPanel) {
@@ -47,9 +45,6 @@ export function ToolMenu({ onOpenPanel }: ToolMenuProps) {
 
     setIsOpen(false);
   };
-
-  // Show all available tools in menu
-  const availableTools = tools;
 
   return (
     <div className="relative" ref={menuRef}>
@@ -62,8 +57,8 @@ export function ToolMenu({ onOpenPanel }: ToolMenuProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full left-0 mb-2 w-48 bg-secondary border border-border rounded-lg shadow-lg">
-          {availableTools.map((tool) => (
+        <div className="absolute bottom-full left-0 z-50 mb-2 w-48 bg-secondary border border-border rounded-lg shadow-lg">
+          {tools.map((tool) => (
             <ToolMenuItem
               key={tool.id}
               tool={tool}

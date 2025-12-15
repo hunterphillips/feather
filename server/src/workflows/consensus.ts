@@ -1,5 +1,9 @@
 import { streamText } from 'ai';
 import { getProvider } from '../providers.js';
+import {
+  registerWorkflow,
+  type WorkflowHandler,
+} from '../lib/workflow-router.js';
 import type { Message, ChatRequest } from '../types.js';
 import type { Request, Response } from 'express';
 
@@ -33,89 +37,81 @@ async function queryModel(
 }
 
 /**
- * Handle consensus chat requests:
+ * Execute consensus workflow:
  * 1. Query multiple models in parallel
  * 2. Synthesize responses using one of the models
- * 3. Stream synthesized response back to client
+ * 3. Return streaming result
+ * Note: Messages are already converted to multimodal format by the router
  */
-export async function handleConsensusChat(req: Request, res: Response) {
-  try {
-    const { messages, toolConfig, systemContext, provider, model } =
-      req.body as ChatRequest;
+export async function executeConsensusWorkflow(params: {
+  messages: any[];
+  toolConfig: Record<string, unknown>;
+  systemContext?: string;
+  provider: string;
+  model: string;
+}) {
+  const { messages, toolConfig, systemContext, provider, model } = params;
 
-    // Extract models from tool config
-    const models = (toolConfig?.models as ModelConfig[]) || [];
+  // Extract models from tool config
+  const models = (toolConfig?.models as ModelConfig[]) || [];
 
-    // Validation
-    if (!messages || models.length < 2) {
-      res.status(400).json({
-        error:
-          'Missing required fields or insufficient models (minimum 2 required)',
-      });
-      return;
-    }
-
-    if (!provider || !model) {
-      res.status(400).json({
-        error: 'Missing synthesizer provider or model',
-      });
-      return;
-    }
-
-    // Prepend system context if provided
-    let finalMessages = messages;
-    if (systemContext) {
-      finalMessages = [{ role: 'system', content: systemContext }, ...messages];
-    }
-
-    console.log(
-      `Consensus query with ${models.length} models:`,
-      models.map((m) => `${m.provider}:${m.model}`).join(', ')
+  // Validation
+  if (!messages || models.length < 2) {
+    throw new Error(
+      'Missing required fields or insufficient models (minimum 2 required)'
     );
+  }
 
-    // 1. Query all selected models in parallel (with system context)
-    const queries = models.map(({ provider, model }) =>
-      queryModel(provider, model, finalMessages)
-    );
+  if (!provider || !model) {
+    throw new Error('Missing synthesizer provider or model');
+  }
 
-    const results = await Promise.allSettled(queries);
+  // Prepend system context if provided
+  let finalMessages = messages;
+  if (systemContext) {
+    finalMessages = [{ role: 'system', content: systemContext }, ...messages];
+  }
 
-    // 2. Extract successful responses
-    const responses = results
-      .map((result, index) => {
-        if (result.status === 'fulfilled') {
-          return {
-            provider: models[index].provider,
-            model: models[index].model,
-            content: result.value,
-          };
-        } else {
-          console.error(
-            `Model ${models[index].provider}:${models[index].model} failed:`,
-            result.reason
-          );
-          return null;
-        }
-      })
-      .filter((r) => r !== null);
+  // 1. Query all selected models in parallel (with system context)
+  const queries = models.map(({ provider, model }) =>
+    queryModel(provider, model, finalMessages)
+  );
 
-    // 3. Handle failures gracefully
-    if (responses.length === 0) {
-      res.status(500).json({
-        error: 'All models failed to respond',
-      });
-      return;
-    }
+  const results = await Promise.allSettled(queries);
 
-    console.log(`${responses.length} models responded successfully`);
+  // 2. Extract successful responses
+  const responses = results
+    .map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return {
+          provider: models[index].provider,
+          model: models[index].model,
+          content: result.value,
+        };
+      } else {
+        console.error(
+          `Model ${models[index].provider}:${models[index].model} failed:`,
+          result.reason
+        );
+        return null;
+      }
+    })
+    .filter((r) => r !== null);
 
-    // 4. Extract original user query for context
-    const userQuery =
-      messages.filter((m: Message) => m.role === 'user').slice(-1)[0]
-        ?.content || 'Unknown query';
+  // 3. Handle failures gracefully
+  if (responses.length === 0) {
+    throw new Error('All models failed to respond');
+  }
 
-    // 5. Create synthesis prompt with enhanced guidelines
-    const synthesisPrompt = `You are synthesizing responses from multiple AI models to provide the best possible answer to the user's query.
+  console.log(`${responses.length} models responded successfully`);
+
+  // 4. Extract original user query for context
+  const userQuery =
+    messages.filter((m: Message) => m.role === 'user').slice(-1)[0]?.content ||
+    'Unknown query';
+
+  // 5. Create synthesis prompt with enhanced guidelines
+  const synthesisPrompt = `You are synthesizing responses from multiple AI models to provide the best possible answer to the user's query.
 
 <user_query>
 ${userQuery}
@@ -147,13 +143,36 @@ Guidelines:
 
 Provide your synthesized response now.`;
 
-    // 6. Use configured synthesizer model (from ModelSelector)
-    const synthesizer = getProvider(provider, model);
+  // 6. Use configured synthesizer model (from ModelSelector)
+  const synthesizer = getProvider(provider, model);
 
-    // 7. Stream synthesized response
-    const result = await streamText({
-      model: synthesizer,
-      messages: [{ role: 'user', content: synthesisPrompt }],
+  // 7. Stream synthesized response
+  const result = await streamText({
+    model: synthesizer,
+    messages: [{ role: 'user', content: synthesisPrompt }],
+  });
+
+  return result;
+}
+
+/**
+ * Handle consensus chat requests (backward compatibility wrapper):
+ * 1. Query multiple models in parallel
+ * 2. Synthesize responses using one of the models
+ * 3. Stream synthesized response back to client
+ */
+export async function handleConsensusChat(req: Request, res: Response) {
+  try {
+    const { messages, toolConfig, systemContext, provider, model } =
+      req.body as ChatRequest;
+
+    // Use the workflow executor
+    const result = await executeConsensusWorkflow({
+      messages,
+      toolConfig: toolConfig || {},
+      systemContext,
+      provider,
+      model,
     });
 
     // Use Vercel Data Stream Protocol (compatible with useChat hook)
@@ -169,3 +188,6 @@ Provide your synthesized response now.`;
     }
   }
 }
+
+// Register the workflow
+registerWorkflow('consensus', executeConsensusWorkflow);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PenSquare, PanelLeft, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useConfigStore } from '@/store/config-store';
@@ -24,7 +24,7 @@ export function Sidebar({
   onDeleteCurrentChat,
   currentChatId,
 }: SidebarProps) {
-  const [isHovering, setIsHovering] = React.useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
   const [dropdownMenu, setDropdownMenu] = useState<{
     chatId: string;
@@ -148,7 +148,7 @@ export function Sidebar({
 
         {/* Chat List */}
         {isOpen && (
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          <div className="flex-1 overflow-y-auto p-2">
             {chats.map((chat) => (
               <ChatListItem
                 key={chat.id}
