@@ -4,7 +4,8 @@ import {
   registerWorkflow,
   type WorkflowHandler,
 } from '../lib/workflow-router.js';
-import type { Message } from '../types.js';
+import type { Message, ChatRequest } from '../types.js';
+import type { Request, Response } from 'express';
 
 interface ModelConfig {
   provider: string;
@@ -152,6 +153,40 @@ Provide your synthesized response now.`;
   });
 
   return result;
+}
+
+/**
+ * Handle consensus chat requests (backward compatibility wrapper):
+ * 1. Query multiple models in parallel
+ * 2. Synthesize responses using one of the models
+ * 3. Stream synthesized response back to client
+ */
+export async function handleConsensusChat(req: Request, res: Response) {
+  try {
+    const { messages, toolConfig, systemContext, provider, model } =
+      req.body as ChatRequest;
+
+    // Use the workflow executor
+    const result = await executeConsensusWorkflow({
+      messages,
+      toolConfig: toolConfig || {},
+      systemContext,
+      provider,
+      model,
+    });
+
+    // Use Vercel Data Stream Protocol (compatible with useChat hook)
+    result.pipeDataStreamToResponse(res);
+  } catch (error) {
+    console.error('Consensus chat error:', error);
+
+    if (!res.headersSent) {
+      res.status(500).json({
+        error:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+      });
+    }
+  }
 }
 
 // Register the workflow

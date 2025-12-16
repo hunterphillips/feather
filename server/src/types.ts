@@ -19,7 +19,7 @@ export interface Tool {
   label: string;
   enabled: boolean;
   config: Record<string, unknown>;
-  isWorkflow?: boolean; // Tool calls a server-side workflow
+  endpoint?: string; // Relative path from API base (e.g., 'workflow/consensus')
 }
 
 export interface Attachment {

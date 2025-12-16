@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Check } from 'lucide-react';
 import { useConfigStore } from '@/store/config-store';
 import type { ToolConfigProps } from '@/lib/types';
@@ -11,29 +11,8 @@ interface ModelConfig {
 export function ConsensusConfig({ tool, isOpen, onClose }: ToolConfigProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { availableModels, updateToolConfig } = useConfigStore();
-  const [positionAbove, setPositionAbove] = useState(false);
 
   const selectedModels = (tool.config.models as ModelConfig[]) || [];
-
-  // Detect if dropdown should open above or below based on available space
-  useEffect(() => {
-    if (!isOpen || !dropdownRef.current) return;
-
-    const checkPosition = () => {
-      const dropdown = dropdownRef.current;
-      if (!dropdown) return;
-
-      const rect = dropdown.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const spaceBelow = viewportHeight - rect.top;
-      const spaceAbove = rect.top;
-
-      // If less than 400px space below and more space above, position above
-      setPositionAbove(spaceBelow < 400 && spaceAbove > spaceBelow);
-    };
-
-    checkPosition();
-  }, [isOpen]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -83,9 +62,7 @@ export function ConsensusConfig({ tool, isOpen, onClose }: ToolConfigProps) {
   return (
     <div
       ref={dropdownRef}
-      className={`absolute left-0 w-72 bg-secondary border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto z-50 ${
-        positionAbove ? 'bottom-full mb-2' : 'top-full mt-2'
-      }`}
+      className="absolute left-0 top-full mt-2 w-72 bg-secondary border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto z-50"
     >
       <div className="p-3 border-b border-border">
         <h3 className="text-sm font-medium text-foreground">
