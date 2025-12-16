@@ -44,7 +44,7 @@ const defaultData: Database = {
           { provider: 'google', model: 'gemini-3-pro-preview' },
         ],
       },
-      endpoint: 'workflow/consensus',
+      isWorkflow: true,
     },
   ],
   chats: [],
