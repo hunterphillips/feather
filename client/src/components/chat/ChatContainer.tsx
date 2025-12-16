@@ -1,17 +1,23 @@
 import { useEffect, useRef } from 'react';
 import { MessageBubble } from './MessageBubble';
+import { LoadingIndicator } from './LoadingIndicator';
 import type { Message } from '@ai-sdk/react';
 
 interface ChatContainerProps {
   messages: Message[];
+  isLoading: boolean;
 }
 
-export function ChatContainer({ messages }: ChatContainerProps) {
+export function ChatContainer({ messages, isLoading }: ChatContainerProps) {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const shouldShowLoadingIndicator =
+    isLoading &&
+    (messages.length === 0 || messages[messages.length - 1]?.role === 'user');
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -25,6 +31,7 @@ export function ChatContainer({ messages }: ChatContainerProps) {
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
+            {shouldShowLoadingIndicator && <LoadingIndicator />}
             <div ref={endRef} />
           </>
         )}

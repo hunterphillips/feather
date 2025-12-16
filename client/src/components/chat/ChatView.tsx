@@ -108,7 +108,7 @@ export function ChatView() {
         ) : (
           // Chat view: normal layout
           <>
-            <ChatContainer messages={messages} />
+            <ChatContainer messages={messages} isLoading={isLoading} />
             <InputArea
               input={input}
               handleInputChange={handleInputChange as any}
