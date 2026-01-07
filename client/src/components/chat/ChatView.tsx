@@ -61,10 +61,6 @@ export function ChatView() {
     navigate('/');
   };
 
-  const onDeleteCurrentChat = () => {
-    navigate('/');
-  };
-
   // Wrap handleSubmit to navigate to new chats
   const onSubmit = async (e: React.FormEvent) => {
     const result = await handleSubmit(e);
@@ -81,7 +77,6 @@ export function ChatView() {
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         onNewChat={onNewChat}
         onSelectChat={onSelectChat}
-        onDeleteCurrentChat={onDeleteCurrentChat}
         currentChatId={id || null}
       />
 
@@ -90,7 +85,7 @@ export function ChatView() {
         <ModelSelector />
 
         {messages.length === 0 ? (
-          // Empty state: centered input
+          // empty chat layout
           <div className="flex-1 flex flex-col items-center justify-center p-4">
             <div className="w-full max-w-3xl">
               <h2 className="text-3xl font-normal text-center mb-8 text-foreground">
@@ -106,7 +101,7 @@ export function ChatView() {
             </div>
           </div>
         ) : (
-          // Chat view: normal layout
+          // chat layout
           <>
             <ChatContainer messages={messages} isLoading={isLoading} />
             <InputArea

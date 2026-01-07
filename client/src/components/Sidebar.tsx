@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PenSquare, PanelLeft, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useConfigStore } from '@/store/config-store';
@@ -12,7 +13,6 @@ interface SidebarProps {
   onToggle: () => void;
   onNewChat: () => void;
   onSelectChat: (id: string) => void;
-  onDeleteCurrentChat?: () => void;
   currentChatId: string | null;
 }
 
@@ -21,18 +21,18 @@ export function Sidebar({
   onToggle,
   onNewChat,
   onSelectChat,
-  onDeleteCurrentChat,
   currentChatId,
 }: SidebarProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [dropdownMenu, setDropdownMenu] = useState<{
     chatId: string;
     anchorEl: HTMLElement;
   } | null>(null);
-  const [editingChatId, setEditingChatId] = useState<string | null>(null);
 
   const { chats, loadChats, deleteChat, updateChat } = useConfigStore();
+  const navigate = useNavigate();
 
   // Load chats on mount
   useEffect(() => {
@@ -69,9 +69,7 @@ export function Sidebar({
     if (chatToDelete) {
       const wasCurrentChat = chatToDelete === currentChatId;
       await deleteChat(chatToDelete);
-      if (wasCurrentChat) {
-        onDeleteCurrentChat?.();
-      }
+      if (wasCurrentChat) navigate('/');
     }
     setChatToDelete(null);
   };
