@@ -2,7 +2,7 @@ export interface AvailableModels {
   openai: string[];
   anthropic: string[];
   google: string[];
-  ollama: string[];
+  ollama?: string[];
 }
 
 export interface Tool {
