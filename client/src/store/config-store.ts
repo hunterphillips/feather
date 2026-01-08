@@ -1,23 +1,9 @@
 import { create } from 'zustand';
 import type { ConfigState, AvailableModels, Chat } from '@/lib/types';
+import { DEMO_MODELS, DEMO_TOOLS } from '@/lib/demo-config';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
-const DEMO_MODELS = {
-  openai: ['gpt-5.1', 'gpt-5-mini', 'gpt-4.1', 'gpt-4.1-mini'],
-  anthropic: [
-    'claude-opus-4-5',
-    'claude-opus-4-1',
-    'claude-sonnet-4',
-    'claude-haiku-4-5',
-  ],
-  google: [
-    'gemini-3-pro-preview',
-    'gemini-2.5-pro',
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-  ],
-};
 
 export const useConfigStore = create<ConfigState>((set, get) => ({
   currentProvider: 'openai',
@@ -100,6 +86,13 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
   },
 
   loadConfig: async () => {
+    if (isDemoMode) {
+      set({
+        tools: DEMO_TOOLS,
+        isConfigLoaded: true,
+      });
+      return;
+    }
     try {
       const response = await fetch(`${API_URL}/api/config`);
       if (response.ok) {
