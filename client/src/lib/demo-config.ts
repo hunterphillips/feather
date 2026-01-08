@@ -22,7 +22,7 @@ export const DEMO_TOOLS: Tool[] = [
     label: 'Instructions',
     enabled: false,
     config: {
-      prompt: "you're in a bad mood",
+      prompt: '',
     },
   },
   {
