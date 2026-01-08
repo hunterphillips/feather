@@ -1,6 +1,5 @@
 {
   "buildCommand": "npm run build:demo --workspace=client",
   "outputDirectory": "client/dist",
-  "framework": "vite",
-  "installCommand": "npm install"
+  "installCommand": "npm ci"
 }
