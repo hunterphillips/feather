@@ -6,6 +6,7 @@ import { ModelSelector } from './ModelSelector';
 import { Sidebar } from '../Sidebar';
 import { Toast, useToast } from '../ui/toast';
 import { useChatSession } from '../../hooks/useChatSession';
+import { DemoBanner } from '../DemoBanner';
 
 export function ChatView() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -70,27 +71,42 @@ export function ChatView() {
   };
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
-      {/* Sidebar */}
-      <Sidebar
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        onNewChat={onNewChat}
-        onSelectChat={onSelectChat}
-        currentChatId={id || null}
-      />
+    <div className="flex flex-col h-screen bg-background text-foreground">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          onNewChat={onNewChat}
+          onSelectChat={onSelectChat}
+          currentChatId={id || null}
+        />
 
-      {/* Main Content Area */}
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <ModelSelector />
+        {/* Main Content Area */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* <DemoBanner /> */}
+          <ModelSelector />
 
-        {messages.length === 0 ? (
-          // empty chat layout
-          <div className="flex-1 flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-3xl">
-              <h2 className="text-3xl font-normal text-center mb-8 text-foreground">
-                What can I help you with?
-              </h2>
+          {messages.length === 0 ? (
+            // empty chat layout
+            <div className="flex-1 flex flex-col items-center justify-center p-4">
+              <div className="w-full max-w-3xl">
+                <h2 className="text-3xl font-normal text-center mb-8 text-foreground">
+                  What can I help you with?
+                </h2>
+                <InputArea
+                  input={input}
+                  handleInputChange={handleInputChange as any}
+                  handleSubmit={onSubmit}
+                  isLoading={isLoading}
+                  onStop={stop}
+                />
+              </div>
+            </div>
+          ) : (
+            // chat layout
+            <>
+              <ChatContainer messages={messages} isLoading={isLoading} />
               <InputArea
                 input={input}
                 handleInputChange={handleInputChange as any}
@@ -98,29 +114,18 @@ export function ChatView() {
                 isLoading={isLoading}
                 onStop={stop}
               />
-            </div>
-          </div>
-        ) : (
-          // chat layout
-          <>
-            <ChatContainer messages={messages} isLoading={isLoading} />
-            <InputArea
-              input={input}
-              handleInputChange={handleInputChange as any}
-              handleSubmit={onSubmit}
-              isLoading={isLoading}
-              onStop={stop}
-            />
-          </>
-        )}
+              <DemoBanner />
+            </>
+          )}
 
-        {toast && (
-          <Toast
-            message={toast.message}
-            variant={toast.variant}
-            onClose={hideToast}
-          />
-        )}
+          {toast && (
+            <Toast
+              message={toast.message}
+              variant={toast.variant}
+              onClose={hideToast}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

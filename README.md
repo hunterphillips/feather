@@ -2,6 +2,8 @@
 
 A lightweight chat interface for LLMs. Designed as a minimalist alternative to Open WebUI or LibreChat.
 
+**[Try the Demo](https://feather-demo.vercel.app)** (simulated responses)
+
 ![app home screen](assets/feather-home.png)
 
 ## Quick Start
