@@ -18,7 +18,7 @@ export function DemoBanner() {
           rel="noopener noreferrer"
           className="flex items-center gap-1 px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md font-medium whitespace-nowrap transition-colors"
         >
-          Get the Real Version →
+          Install from GitHub →
         </a>
       </div>
     </div>
