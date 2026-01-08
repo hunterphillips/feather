@@ -1,3 +1,5 @@
+import type { Message } from '@ai-sdk/react';
+
 /**
  * Generates fake streaming responses that mimic AI SDK format
  * Returns canned responses based on message content
@@ -87,9 +89,7 @@ export function createFakeStream(message: string): ReadableStream<Uint8Array> {
         const chunk = response.slice(index, index + chunkSize);
 
         // Format as AI SDK data stream protocol
-        // Use JSON.stringify to properly escape, then remove outer quotes
-        const escaped = JSON.stringify(chunk).slice(1, -1);
-        const dataChunk = `0:"${escaped}"\n`;
+        const dataChunk = `0:${JSON.stringify(chunk)}\n`;
         controller.enqueue(encoder.encode(dataChunk));
 
         index += chunkSize;
@@ -113,7 +113,7 @@ export function createFakeStream(message: string): ReadableStream<Uint8Array> {
  */
 export async function handleDemoSubmit(
   input: string,
-  setMessages: (updater: (prev: any[]) => any[]) => void,
+  setMessages: (updater: (prev: Message[]) => Message[]) => void,
   setInput: (value: string) => void
 ): Promise<void> {
   if (!input.trim()) return;
@@ -179,5 +179,22 @@ export async function handleDemoSubmit(
     }
   } catch (error) {
     console.error('Demo stream error:', error);
+
+    // Fallback: Set the full response immediately without streaming
+    if (!assistantMessage.content) {
+      assistantMessage.content = getDemoResponse(input);
+    }
+
+    // Ensure the message is added/updated
+    setMessages((prev) => {
+      const existing = prev.find((m) => m.id === assistantMessage.id);
+      if (existing) {
+        return prev.map((m) =>
+          m.id === assistantMessage.id ? { ...assistantMessage } : m
+        );
+      } else {
+        return [...prev, assistantMessage];
+      }
+    });
   }
 }
