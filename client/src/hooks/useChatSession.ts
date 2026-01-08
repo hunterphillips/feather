@@ -4,6 +4,7 @@ import { useConfigStore } from '../store/config-store';
 import { useChatPersistence } from './useChatPersistence';
 import { useFileUpload } from './useFileUpload';
 import type { Attachment } from '@/lib/types';
+import { handleDemoSubmit } from '@/lib/demo-stream';
 
 export function useChatSession() {
   const {
@@ -24,6 +25,7 @@ export function useChatSession() {
 
   const { uploadFilesToChat, isUploading: isUploadingFiles } = useFileUpload();
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
   const workflowTool = tools.find((tool) => tool.enabled && tool.isWorkflow);
 
   // Aggregate Context from Tools
@@ -112,6 +114,13 @@ export function useChatSession() {
       // Allow submission if there's either text or files
       if (!input.trim() && pendingFiles.length < 1) return {};
 
+      // DEMO MODE: Use fake streaming responses
+      if (DEMO_MODE) {
+        await handleDemoSubmit(input, setMessages, setInput);
+        return {};
+      }
+
+      // REAL MODE: Use actual API call
       let chatId = currentChatId;
       let newChatId: string | undefined;
 
@@ -166,6 +175,7 @@ export function useChatSession() {
       uploadFilesToChat,
       append,
       setInput,
+      setMessages,
       clearPendingFiles,
       setCurrentAttachments,
     ]
