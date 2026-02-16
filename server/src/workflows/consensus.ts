@@ -3,6 +3,7 @@ import { getProvider } from '../providers.js';
 import {
   registerWorkflow,
   type WorkflowHandler,
+  type WorkflowResult,
 } from '../lib/workflow-router.js';
 import type { Message } from '../types.js';
 
@@ -48,7 +49,7 @@ export async function executeConsensusWorkflow(params: {
   systemContext?: string;
   provider: string;
   model: string;
-}) {
+}): Promise<WorkflowResult> {
   const { messages, toolConfig, systemContext, provider, model } = params;
 
   // Extract models from tool config
@@ -151,7 +152,15 @@ Provide your synthesized response now.`;
     messages: [{ role: 'user', content: synthesisPrompt }],
   });
 
-  return result;
+  // 8. Return result with individual responses as annotations
+  const annotations = responses.map((r) => ({
+    type: 'consensus-response' as const,
+    provider: r.provider,
+    model: r.model,
+    content: r.content,
+  }));
+
+  return { result, annotations };
 }
 
 // Register the workflow
