@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import type { Message } from '@ai-sdk/react';
 import type { Attachment } from '@/lib/types';
 import { MessageAttachment } from './MessageAttachment';
+import { ConsensusResponses } from './ConsensusResponses';
 
 interface MessageBubbleProps {
   message: Message & { attachments?: Attachment[] };
@@ -64,6 +65,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           >
             {message.content}
           </ReactMarkdown>
+        )}
+
+        {/* Consensus individual responses */}
+        {!isUser && message.annotations && message.annotations.length > 0 && (
+          <ConsensusResponses annotations={message.annotations} />
         )}
       </div>
     </div>

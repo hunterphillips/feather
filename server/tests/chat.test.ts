@@ -10,9 +10,10 @@ beforeAll(() => {
   process.env.GOOGLE_API_KEY = 'test-key';
 });
 
-// Mock streamText
+// Mock streamText and pipeDataStreamToResponse
 vi.mock('ai', () => ({
   streamText: vi.fn(),
+  pipeDataStreamToResponse: vi.fn(),
 }));
 
 describe('POST /api/chat', () => {

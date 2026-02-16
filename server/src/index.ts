@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { streamText } from 'ai';
+import { streamText, pipeDataStreamToResponse } from 'ai';
 import { config, validateProviderConfig } from './config.js';
 import {
   getProvider,
@@ -149,29 +149,40 @@ app.post('/api/chat', async (req, res) => {
     // Check for workflow handler
     const workflowHandler = getWorkflowHandler(workflowId);
 
-    let result;
-
     if (workflowHandler) {
-      result = await workflowHandler({
+      const { result, annotations } = await workflowHandler({
         messages: multimodalMessages,
         toolConfig: toolConfig || {},
         systemContext,
         provider,
         model,
       });
+
+      // Use standalone pipeDataStreamToResponse to inject annotations
+      pipeDataStreamToResponse(res, {
+        execute: (dataStream) => {
+          // Write annotations before merging the stream
+          if (annotations) {
+            for (const annotation of annotations) {
+              dataStream.writeMessageAnnotation(annotation);
+            }
+          }
+          result.mergeIntoDataStream(dataStream);
+        },
+      });
     } else {
       // Standard chat flow
       const providerInstance = getProvider(provider, model);
 
-      result = await streamText({
+      const result = await streamText({
         model: providerInstance,
         messages: multimodalMessages as any,
         ...(systemContext && { system: systemContext }),
       });
-    }
 
-    // Use Vercel Data Stream Protocol (compatible with useChat hook)
-    result.pipeDataStreamToResponse(res);
+      // Use Vercel Data Stream Protocol (compatible with useChat hook)
+      result.pipeDataStreamToResponse(res);
+    }
   } catch (error) {
     console.error('Chat error:', error);
 
